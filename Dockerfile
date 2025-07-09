@@ -221,7 +221,9 @@ FROM python-common AS lean
 COPY requirements/base.txt requirements/
 RUN --mount=type=cache,target=${SUPERSET_HOME}/.cache/uv \
     /app/docker/pip-install.sh --requires-build-essential -r requirements/base.txt
-# Install the superset package
+# Install the optional CORS dependencies first, then the Superset package
+RUN --mount=type=cache,target=${SUPERSET_HOME}/.cache/uv \
+    uv pip install apache_superset[cors]
 RUN --mount=type=cache,target=${SUPERSET_HOME}/.cache/uv \
     uv pip install .
 RUN python -m compileall /app/superset
@@ -244,7 +246,9 @@ COPY requirements/*.txt requirements/
 # Install Python dependencies using docker/pip-install.sh
 RUN --mount=type=cache,target=${SUPERSET_HOME}/.cache/uv \
     /app/docker/pip-install.sh --requires-build-essential -r requirements/development.txt
-# Install the superset package
+# Install the optional CORS dependencies first, then the Superset package
+RUN --mount=type=cache,target=${SUPERSET_HOME}/.cache/uv \
+    uv pip install apache_superset[cors]
 RUN --mount=type=cache,target=${SUPERSET_HOME}/.cache/uv \
     uv pip install .
 
