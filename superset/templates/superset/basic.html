@@ -23,7 +23,9 @@
     <title>
       {% block title %}
         {% if title %}
-          {{ title }}
+          {{ title | replace('Superset', 'NAT') }}
+        {% else %}
+          NAT
         {% endif %}
       {% endblock %}
     </title>
