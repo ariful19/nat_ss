@@ -211,7 +211,7 @@ export const DashboardPage: FC<PageProps> = ({ idOrSlug }: PageProps) => {
       document.title = dashboard_title;
     }
     return () => {
-      document.title = 'Superset';
+      document.title = 'NAT';
     };
   }, [dashboard_title]);
 

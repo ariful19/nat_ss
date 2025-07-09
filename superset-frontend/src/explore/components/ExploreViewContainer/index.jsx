@@ -273,7 +273,7 @@ function ExploreViewContainer(props) {
       document.title = props.sliceName;
     }
     return () => {
-      document.title = 'Superset';
+      document.title = 'NAT';
     };
   }, [props.sliceName]);
 
