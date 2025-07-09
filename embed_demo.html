@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Superset Embedded Dashboard Demo</title>
+  <script src="https://unpkg.com/@superset-ui/embedded-sdk"></script>
+</head>
+<body>
+  <h1>Embedded Dashboard Example</h1>
+  <div id="superset-container" style="width:800px;height:600px;"></div>
+  <script>
+    // Replace with the UUID for the dashboard you enabled for embedding
+    const dashboardId = "YOUR_DASHBOARD_UUID";
+
+    // This callback should retrieve a guest token from your backend
+    async function fetchGuestToken() {
+      const response = await fetch('/api/guestToken');
+      const data = await response.json();
+      return data.token;
+    }
+
+    supersetEmbeddedSdk.embedDashboard({
+      id: dashboardId,
+      supersetDomain: window.location.origin,
+      mountPoint: document.getElementById('superset-container'),
+      fetchGuestToken,
+      dashboardUiConfig: {
+        hideTitle: true,
+        filters: { expanded: true }
+      }
+    });
+  </script>
+</body>
+</html>
