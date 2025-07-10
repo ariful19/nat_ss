@@ -939,6 +939,7 @@ CORS_OPTIONS: dict[Any, Any] = {
     "origins": [
         "https://tile.openstreetmap.org",
         "https://tile.osm.ch",
+        "http://127.0.0.1:8082"
     ]
 }
 

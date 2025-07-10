@@ -10,18 +10,69 @@
   <div id="superset-container" style="width:800px;height:600px;"></div>
   <script>
     // Replace with the UUID for the dashboard you enabled for embedding
-    const dashboardId = "YOUR_DASHBOARD_UUID";
+    const dashboardId = "41017011-6e08-4161-b281-534e781640d2";
 
-    // This callback should retrieve a guest token from your backend
+    // Streamlined: fetch guest token directly from Superset API
     async function fetchGuestToken() {
-      const response = await fetch('/api/guestToken');
-      const data = await response.json();
-      return data.token;
+      // 1. Get JWT token (login as admin or other user)
+      const loginRes = await fetch("http://localhost:9000/api/v1/security/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: "admin", // or another user with access
+          password: "admin",
+          provider: "db",
+          refresh: false
+        }),
+        credentials: "include"
+      });
+      const loginData = await loginRes.json();
+      const accessToken = loginData.access_token;
+
+      // 2. Get CSRF token
+      const csrfRes = await fetch("http://localhost:9000/api/v1/security/csrf_token/", {
+        method: "GET",
+        headers: { "Authorization": `Bearer ${accessToken}` },
+        credentials: "include"
+      });
+      const csrfData = await csrfRes.json();
+      const csrfToken = csrfData.result;
+
+      // 3. Get guest token
+      const guestRes = await fetch("http://localhost:9000/api/v1/security/guest_token/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken,
+          "Authorization": `Bearer ${accessToken}`
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          user: {
+            username: "guest",
+            first_name: "guest",
+            last_name: "guest"
+          },
+          resources: [
+            {
+              type: "dashboard",
+              id: dashboardId
+            }
+          ],
+          rls: [
+            {
+              clause: "region = 'North America'"
+            }
+          ]
+        })
+      });
+      const guestData = await guestRes.json();
+      return guestData.token;
     }
 
     supersetEmbeddedSdk.embedDashboard({
       id: dashboardId,
-      supersetDomain: window.location.origin,
+      supersetDomain: `http://localhost:9000/`,
       mountPoint: document.getElementById('superset-container'),
       fetchGuestToken,
       dashboardUiConfig: {
