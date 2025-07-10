@@ -1,85 +1,105 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <title>Superset Embedded Dashboard Demo</title>
   <script src="https://unpkg.com/@superset-ui/embedded-sdk"></script>
-</head>
-<body>
-  <h1>Embedded Dashboard Example</h1>
-  <div id="superset-container" style="width:800px;height:600px;"></div>
-  <script>
-    // Replace with the UUID for the dashboard you enabled for embedding
-    const dashboardId = "41017011-6e08-4161-b281-534e781640d2";
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+    }
 
-    // Streamlined: fetch guest token directly from Superset API
+    #superset-container {
+      width: 100vw;
+      height: 80vh;
+    }
+
+    #log {
+      white-space: pre;
+      font-size: .85rem;
+      background: #eee;
+      padding: .5rem
+    }
+  </style>
+</head>
+
+<body>
+  <h1 style="margin:.5rem">Embedded Dashboard Example</h1>
+
+  <div id="superset-container"></div>
+  <div id="log"></div>
+
+  <script>
+    const dashboardId = "69ecd1f1-04a1-4c60-a361-1e4feed6e2ab";
+    const supersetHost = "http://localhost:9000";   // ← no trailing “/”
+    const log = msg => (document.getElementById("log").textContent += msg + "\n");
+
     async function fetchGuestToken() {
-      // 1. Get JWT token (login as admin or other user)
-      const loginRes = await fetch("http://localhost:9000/api/v1/security/login", {
+      // 1. login – get access_token cookie + header
+      const loginRes = await fetch(`${supersetHost}/api/v1/security/login`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          username: "admin", // or another user with access
+          username: "admin",
           password: "admin",
           provider: "db",
-          refresh: false
+          refresh: false,
         }),
-        credentials: "include"
       });
-      const loginData = await loginRes.json();
-      const accessToken = loginData.access_token;
+      if (!loginRes.ok) throw new Error(`login failed: ${await loginRes.text()}`);
+      const { access_token: accessToken } = await loginRes.json();
+      log("✅  logged in");
 
-      // 2. Get CSRF token
-      const csrfRes = await fetch("http://localhost:9000/api/v1/security/csrf_token/", {
+      // 2. get CSRF
+      const csrfRes = await fetch(`${supersetHost}/api/v1/security/csrf_token/`, {
         method: "GET",
-        headers: { "Authorization": `Bearer ${accessToken}` },
-        credentials: "include"
+        credentials: "include",
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
-      const csrfData = await csrfRes.json();
-      const csrfToken = csrfData.result;
+      if (!csrfRes.ok) throw new Error(`csrf fetch: ${await csrfRes.text()}`);
+      const { result: csrfToken } = await csrfRes.json();
 
-      // 3. Get guest token
-      const guestRes = await fetch("http://localhost:9000/api/v1/security/guest_token/", {
+      // 3. guest-token
+      const body = JSON.stringify({
+        user: {
+          username: "guest",
+          first_name: "guest",
+          last_name: "guest",
+        },
+        resources: [
+          { type: "dashboard", id: dashboardId },
+        ],
+        rls: [],              // ← supply an *empty array* when you don’t need filters
+      });
+
+      const guestRes = await fetch(`${supersetHost}/api/v1/security/guest_token/`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
           "X-CSRFToken": csrfToken,
-          "Authorization": `Bearer ${accessToken}`
+          Authorization: `Bearer ${accessToken}`,
         },
-        credentials: "include",
-        body: JSON.stringify({
-          user: {
-            username: "guest",
-            first_name: "guest",
-            last_name: "guest"
-          },
-          resources: [
-            {
-              type: "dashboard",
-              id: dashboardId
-            }
-          ],
-          rls: [
-            {
-              clause: "region = 'North America'"
-            }
-          ]
-        })
+        body,
       });
-      const guestData = await guestRes.json();
-      return guestData.token;
+      if (!guestRes.ok) throw new Error(`guest token: ${await guestRes.text()}`);
+      const { token } = await guestRes.json();
+      log("✅  guest token issued");
+      return token;
     }
 
     supersetEmbeddedSdk.embedDashboard({
       id: dashboardId,
-      supersetDomain: `http://localhost:9000/`,
-      mountPoint: document.getElementById('superset-container'),
+      supersetDomain: supersetHost,
+      mountPoint: document.getElementById("superset-container"),
       fetchGuestToken,
-      dashboardUiConfig: {
-        hideTitle: true,
-        filters: { expanded: true }
-      }
-    });
+      dashboardUiConfig: { hideTitle: true, filters: { expanded: true } },
+    })
+      .catch(err => log(`❌ ${err.message}`));
   </script>
 </body>
+
 </html>
