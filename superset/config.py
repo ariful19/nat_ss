@@ -939,8 +939,9 @@ CORS_OPTIONS: dict[Any, Any] = {
     "origins": [
         "https://tile.openstreetmap.org",
         "https://tile.osm.ch",
-        "http://127.0.0.1:8082"
-    ]
+        "http://127.0.0.1:8082",
+    ],
+    "supports_credentials": True,
 }
 
 # Sanitizes the HTML content used in markdowns to allow its rendering in a safe manner.
