@@ -36,3 +36,9 @@ marshmallow-sqlalchemy>=1.3.0,<1.4.1
 
 # needed for python 3.12 support
 openapi-schema-validator>=0.6.3
+
+# needed when using the flask-cors extension
+.[cors]
+# library used for asynchronous HTTP requests
+httpx>=0.27.0
+prophet
