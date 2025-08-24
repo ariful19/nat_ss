@@ -32,6 +32,7 @@ x-superset-volumes: &superset-volumes
   - ./superset-frontend:/app/superset-frontend
   - superset_home:/app/superset_home
   - ./tests:/app/tests
+  - ./superset_config.py:/app/superset_config.py:ro
 x-common-build: &common-build
   context: .
   target: ${SUPERSET_BUILD_TARGET:-dev} # can use `dev` (default) or `lean`
@@ -91,6 +92,8 @@ services:
         required: true
       - path: docker/.env-local # optional override
         required: false
+    environment:
+      - SUPERSET_CONFIG_PATH=/app/superset_config.py
     build:
       <<: *common-build
     container_name: superset_app
@@ -151,6 +154,8 @@ services:
         required: true
       - path: docker/.env-local # optional override
         required: false
+    environment:
+      - SUPERSET_CONFIG_PATH=/app/superset_config.py
     depends_on:
       db:
         condition: service_started
@@ -202,6 +207,7 @@ services:
         required: false
     environment:
       CELERYD_CONCURRENCY: 2
+      SUPERSET_CONFIG_PATH: /app/superset_config.py
     restart: unless-stopped
     depends_on:
       superset-init:
@@ -226,6 +232,8 @@ services:
         required: true
       - path: docker/.env-local # optional override
         required: false
+    environment:
+      - SUPERSET_CONFIG_PATH=/app/superset_config.py
     restart: unless-stopped
     depends_on:
       - superset-worker
