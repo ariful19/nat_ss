@@ -1,13 +1,6 @@
 name: Docs Deployment
 
 on:
-  push:
-    paths:
-      - "docs/**"
-      - "README.md"
-    branches:
-      - "master"
-
   workflow_dispatch: {}
 
 jobs:
