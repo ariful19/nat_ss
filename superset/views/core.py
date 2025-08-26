@@ -918,6 +918,80 @@ class Superset(BaseSupersetView):
             "Language pack doesn't exist on the server", status=404
         )
 
+    @expose("/internal/provision_login", methods=("POST",))
+    def provision_user_login(self) -> FlaskResponse:
+        """
+        Minimal internal endpoint to auto-provision and log in a user, then
+        redirect to the welcome page. CSRF should be exempted via config.
+
+        Accepts application/json or form-encoded with fields:
+        userId, username, name, email, mobile, role, officeId.
+        """
+        # Lazy imports to avoid circular deps
+        from flask import request
+        from flask_login import login_user
+        from superset import security_manager, db
+
+        # Extract payload from JSON or form
+        data: dict[str, Any] = {}
+        try:
+            if request.is_json:
+                data = request.get_json(silent=True) or {}
+            else:
+                # accept form-encoded payload directly
+                data = {k: request.form.get(k) for k in request.form.keys()}
+        except Exception:  # pylint: disable=broad-except
+            data = {}
+
+        username = (data.get("username") or "").strip()
+        name = (data.get("name") or username or "").strip()
+        email = (data.get("email") or f"{username}@example.com").strip()
+        role_name = (data.get("role") or "Gamma").strip()
+
+        if not username:
+            return self.json_response({"error": "username is required"}, status=400)
+
+        # Split name into first/last in a simple way
+        parts = [p for p in name.split(" ") if p]
+        first_name = parts[0] if parts else username
+        last_name = " ".join(parts[1:]) if len(parts) > 1 else ""
+
+        # Ensure role exists (empty role if custom)
+        role = security_manager.find_role(role_name)
+        if role is None:
+            role = security_manager.add_role(role_name)
+
+        # Find or create the user
+        user = security_manager.find_user(username=username)
+        if user is None:
+            # Provide a random password for DB auth; not used for this flow
+            try:
+                import secrets
+
+                password = secrets.token_urlsafe(16)
+            except Exception:  # pragma: no cover
+                password = f"!{username}!"
+
+            user = security_manager.add_user(
+                username=username,
+                first_name=first_name,
+                last_name=last_name,
+                email=email,
+                role=role,
+                password=password,
+            )
+            # Persist immediately to ensure the user has an id
+            db.session.commit()
+        else:
+            # Ensure role is present on existing user if not already
+            if role not in user.roles:
+                user.roles.append(role)
+                db.session.commit()
+
+        # Log in and redirect to welcome
+        login_user(user)
+        return redirect(url_for("Superset.welcome"))
+
     @event_logger.log_this
     @expose("/welcome/")
     def welcome(self) -> FlaskResponse:
