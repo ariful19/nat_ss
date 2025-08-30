@@ -991,7 +991,7 @@ class Superset(BaseSupersetView):
                 user.roles.append(role)
                 db.session.commit()
 
-        # Log in and redirect to dashboard
+        # Log in and redirect to welcome
         login_user(user)
 
         # Persist office information in the session for later use
@@ -1000,7 +1000,7 @@ class Superset(BaseSupersetView):
         if office_name:
             session["officeName"] = office_name
 
-        return redirect(url_for("Superset.dashboard"))
+        return redirect(url_for("Superset.welcome"))
 
     @event_logger.log_this
     @expose("/welcome/")
