@@ -30,6 +30,7 @@ from flask import (
     current_app as app,
     flash,
     g,
+    session,
     redirect,
     request,
     Response,
@@ -925,7 +926,7 @@ class Superset(BaseSupersetView):
         redirect to the welcome page. CSRF should be exempted via config.
 
         Accepts application/json or form-encoded with fields:
-        userId, username, name, email, mobile, role, officeId.
+        userId, username, name, email, mobile, role, officeId, officeName.
         """
         # Lazy imports to avoid circular deps
         from flask import request
@@ -947,6 +948,8 @@ class Superset(BaseSupersetView):
         name = (data.get("name") or username or "").strip()
         email = (data.get("email") or f"{username}@example.com").strip()
         role_name = (data.get("role") or "Gamma").strip()
+        office_id = data.get("officeId")
+        office_name = data.get("officeName") or data.get("office_name")
 
         if not username:
             return self.json_response({"error": "username is required"}, status=400)
@@ -988,9 +991,16 @@ class Superset(BaseSupersetView):
                 user.roles.append(role)
                 db.session.commit()
 
-        # Log in and redirect to welcome
+        # Log in and redirect to dashboard
         login_user(user)
-        return redirect(url_for("Superset.welcome"))
+
+        # Persist office information in the session for later use
+        if office_id is not None:
+            session["officeId"] = office_id
+        if office_name:
+            session["officeName"] = office_name
+
+        return redirect(url_for("Superset.dashboard"))
 
     @event_logger.log_this
     @expose("/welcome/")

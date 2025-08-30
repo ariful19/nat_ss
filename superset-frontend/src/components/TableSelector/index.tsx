@@ -113,6 +113,8 @@ interface TableSelectorProps {
   ) => void;
   tableSelectMode?: 'single' | 'multiple';
   customTableOptionLabelRenderer?: (table: Table) => JSX.Element;
+  // Optional list of table types to include in the dropdown (e.g. ['view'])
+  allowedTableTypes?: string[];
 }
 
 export interface TableOption {
@@ -177,6 +179,7 @@ const TableSelector: FunctionComponent<TableSelectorProps> = ({
   tableValue = undefined,
   onTableSelectChange,
   customTableOptionLabelRenderer,
+  allowedTableTypes,
 }) => {
   const { addSuccessToast } = useToasts();
   const [currentCatalog, setCurrentCatalog] = useState<
@@ -216,17 +219,23 @@ const TableSelector: FunctionComponent<TableSelectorProps> = ({
   const tableOptions = useMemo<TableOption[]>(
     () =>
       data
-        ? data.options.map(table => ({
-            value: table.value,
-            label: customTableOptionLabelRenderer ? (
-              customTableOptionLabelRenderer(table)
-            ) : (
-              <TableOption table={table} />
-            ),
-            text: table.value,
-          }))
+        ? data.options
+            .filter(table =>
+              Array.isArray(allowedTableTypes)
+                ? allowedTableTypes.includes(table.type)
+                : true,
+            )
+            .map(table => ({
+              value: table.value,
+              label: customTableOptionLabelRenderer ? (
+                customTableOptionLabelRenderer(table)
+              ) : (
+                <TableOption table={table} />
+              ),
+              text: table.value,
+            }))
         : [],
-    [data, customTableOptionLabelRenderer],
+    [data, customTableOptionLabelRenderer, allowedTableTypes],
   );
 
   useEffect(() => {
@@ -312,15 +321,24 @@ const TableSelector: FunctionComponent<TableSelectorProps> = ({
   function renderTableSelect() {
     const disabled = (currentSchema && !formMode && readOnly) || !currentSchema;
 
+    const onlyViews =
+      Array.isArray(allowedTableTypes) &&
+      allowedTableTypes.length === 1 &&
+      allowedTableTypes[0] === 'view';
+
     const header = sqlLabMode ? (
       <FormLabel>{t('See table schema')}</FormLabel>
     ) : (
-      <FormLabel>{t('Table')}</FormLabel>
+      <FormLabel>{onlyViews ? t('View') : t('Table')}</FormLabel>
     );
 
     const select = (
       <Select
-        ariaLabel={t('Select table or type to search tables')}
+        ariaLabel={
+          onlyViews
+            ? t('Select view or type to search views')
+            : t('Select table or type to search tables')
+        }
         disabled={disabled}
         filterOption={handleFilterOption}
         header={header}
@@ -331,7 +349,11 @@ const TableSelector: FunctionComponent<TableSelectorProps> = ({
           internalTableChange(options)
         }
         options={tableOptions}
-        placeholder={t('Select table or type to search tables')}
+        placeholder={
+          onlyViews
+            ? t('Select view or type to search views')
+            : t('Select table or type to search tables')
+        }
         showSearch
         mode={tableSelectMode}
         value={tableSelectValue}

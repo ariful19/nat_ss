@@ -210,6 +210,8 @@ export default function LeftPanel({
         onSchemaChange={setSchema}
         onTableSelectChange={setTable}
         sqlLabMode={false}
+        // Only show database views when creating a dataset
+        allowedTableTypes={['view']}
         customTableOptionLabelRenderer={customTableOptionLabelRenderer}
         {...(dataset?.catalog && { catalog: dataset.catalog })}
         {...(dataset?.schema && { schema: dataset.schema })}
