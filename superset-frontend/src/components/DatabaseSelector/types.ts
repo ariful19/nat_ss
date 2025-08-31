@@ -47,5 +47,8 @@ export interface DatabaseSelectorProps {
   onSchemaChange?: (schema?: string) => void;
   schema?: string;
   readOnly?: boolean;
+  // When true, disable DB/Catalog/Schema selectors while keeping other
+  // controls (like table selector upstream) functional.
+  dbSchemaReadOnly?: boolean;
   sqlLabMode?: boolean;
 }

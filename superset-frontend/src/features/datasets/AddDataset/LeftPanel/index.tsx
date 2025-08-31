@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { useEffect, SetStateAction, Dispatch, useCallback } from 'react';
+import { useEffect, SetStateAction, Dispatch, useCallback, useMemo } from 'react';
 import { styled, t } from '@superset-ui/core';
 import TableSelector, { TableOption } from 'src/components/TableSelector';
 import { EmptyState } from '@superset-ui/core/components';
@@ -29,6 +29,8 @@ import {
 } from 'src/features/datasets/AddDataset/types';
 import { Table } from 'src/hooks/apiResources';
 import { Typography } from '@superset-ui/core/components/Typography';
+import getBootstrapData from 'src/utils/getBootstrapData';
+import { isUserAdmin } from 'src/dashboard/util/permissionUtils';
 
 interface LeftPanelProps {
   setDataset: Dispatch<SetStateAction<object>>;
@@ -123,6 +125,21 @@ export default function LeftPanel({
   datasetNames,
 }: LeftPanelProps) {
   const { addDangerToast } = useToasts();
+  const bootstrapData = getBootstrapData();
+  const adminUser = isUserAdmin(bootstrapData.user);
+  const datasetCreationDefaults =
+    bootstrapData?.common?.dataset_creation_defaults || {};
+  const defaultDbId = datasetCreationDefaults?.dbId as number | undefined;
+  const defaultSchema = datasetCreationDefaults?.schema as
+    | string
+    | undefined;
+  const defaultDbName = datasetCreationDefaults?.dbName as string | undefined;
+
+  // lock selectors only for non-admins when defaults are provided
+  const lockDbSchema = useMemo(
+    () => Boolean(!adminUser && defaultDbId && defaultSchema),
+    [adminUser, defaultDbId, defaultSchema],
+  );
 
   const setDatabase = useCallback(
     (db: Partial<DatabaseObject>) => {
@@ -153,14 +170,29 @@ export default function LeftPanel({
     });
   };
   useEffect(() => {
-    const currentUserSelectedDb = getItem(
-      LocalStorageKeys.Database,
-      null,
-    ) as DatabaseObject;
-    if (currentUserSelectedDb) {
-      setDatabase(currentUserSelectedDb);
+    if (lockDbSchema) {
+      // Apply config-driven defaults for non-admins
+      const dbObj: Partial<DatabaseObject> = {
+        id: defaultDbId!,
+        database_name: defaultDbName || 'Default',
+      };
+      setDatabase(dbObj);
+      if (defaultSchema) {
+        setSchema(defaultSchema);
+      }
+    } else {
+      // Fallback to previously selected DB in local storage
+      const currentUserSelectedDb = getItem(
+        LocalStorageKeys.Database,
+        null,
+      ) as DatabaseObject;
+      if (currentUserSelectedDb) {
+        setDatabase(currentUserSelectedDb);
+      }
     }
-  }, [setDatabase]);
+    // run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const customTableOptionLabelRenderer = useCallback(
     (table: Table) => (
@@ -213,6 +245,9 @@ export default function LeftPanel({
         // Only show database views when creating a dataset
         allowedTableTypes={['view']}
         customTableOptionLabelRenderer={customTableOptionLabelRenderer}
+        // restrict DB & Schema selection when not admin
+        isDatabaseSelectEnabled={!lockDbSchema}
+        dbSchemaReadOnly={lockDbSchema}
         {...(dataset?.catalog && { catalog: dataset.catalog })}
         {...(dataset?.schema && { schema: dataset.schema })}
       />

@@ -101,6 +101,9 @@ interface TableSelectorProps {
   onCatalogChange?: (catalog?: string | null) => void;
   onSchemaChange?: (schema?: string) => void;
   readOnly?: boolean;
+  // When true, disables only the DB/Catalog/Schema selectors,
+  // leaving the table selector enabled for selection.
+  dbSchemaReadOnly?: boolean;
   catalog?: string | null;
   schema?: string;
   onEmptyResults?: (searchText?: string) => void;
@@ -171,6 +174,7 @@ const TableSelector: FunctionComponent<TableSelectorProps> = ({
   onCatalogChange,
   onSchemaChange,
   readOnly = false,
+  dbSchemaReadOnly = false,
   onEmptyResults,
   catalog,
   schema,
@@ -237,6 +241,16 @@ const TableSelector: FunctionComponent<TableSelectorProps> = ({
         : [],
     [data, customTableOptionLabelRenderer, allowedTableTypes],
   );
+
+  useEffect(() => {
+    // keep local state in sync when parent updates props (e.g., config defaults)
+    setCurrentCatalog(catalog);
+  }, [catalog]);
+
+  useEffect(() => {
+    // update schema to enable table selection when defaults arrive
+    setCurrentSchema(schema);
+  }, [schema]);
 
   useEffect(() => {
     // reset selections
@@ -380,15 +394,16 @@ const TableSelector: FunctionComponent<TableSelectorProps> = ({
         formMode={formMode}
         getDbList={getDbList}
         handleError={handleError}
-        onDbChange={readOnly ? undefined : internalDbChange}
+        onDbChange={readOnly || dbSchemaReadOnly ? undefined : internalDbChange}
         onEmptyResults={onEmptyResults}
-        onCatalogChange={readOnly ? undefined : internalCatalogChange}
+        onCatalogChange={readOnly || dbSchemaReadOnly ? undefined : internalCatalogChange}
         catalog={currentCatalog}
-        onSchemaChange={readOnly ? undefined : internalSchemaChange}
+        onSchemaChange={readOnly || dbSchemaReadOnly ? undefined : internalSchemaChange}
         schema={currentSchema}
         sqlLabMode={sqlLabMode}
-        isDatabaseSelectEnabled={isDatabaseSelectEnabled && !readOnly}
+        isDatabaseSelectEnabled={isDatabaseSelectEnabled && !readOnly && !dbSchemaReadOnly}
         readOnly={readOnly}
+        dbSchemaReadOnly={dbSchemaReadOnly}
       />
       {sqlLabMode && !formMode && <div className="divider" />}
       {renderTableSelect()}

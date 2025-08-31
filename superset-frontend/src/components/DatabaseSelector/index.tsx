@@ -128,6 +128,7 @@ export function DatabaseSelector({
   onSchemaChange,
   schema,
   readOnly = false,
+  dbSchemaReadOnly = false,
   sqlLabMode = false,
 }: DatabaseSelectorProps) {
   const showCatalogSelector = !!db?.allow_multi_catalog;
@@ -270,6 +271,15 @@ export function DatabaseSelector({
 
   const schemaOptions = schemaData || EMPTY_SCHEMA_OPTIONS;
 
+  // Sync currentSchema when parent `schema` prop changes (e.g., after defaults load)
+  useEffect(() => {
+    if (schema !== undefined) {
+      setCurrentSchema(
+        schema ? { label: schema, value: schema, title: schema } : undefined,
+      );
+    }
+  }, [schema]);
+
   function changeCatalog(catalog: CatalogOption | null | undefined) {
     setCurrentCatalog(catalog);
     setCurrentSchema(undefined);
@@ -357,7 +367,7 @@ export function DatabaseSelector({
         onChange={changeDatabase}
         value={currentDb}
         placeholder={t('Select database or type to search databases')}
-        disabled={!isDatabaseSelectEnabled || readOnly}
+        disabled={!isDatabaseSelectEnabled || readOnly || dbSchemaReadOnly}
         options={loadDatabases}
         sortComparator={sortComparator}
       />,
@@ -375,7 +385,7 @@ export function DatabaseSelector({
     return renderSelectRow(
       <Select
         ariaLabel={t('Select catalog or type to search catalogs')}
-        disabled={!currentDb || readOnly}
+        disabled={!currentDb || readOnly || dbSchemaReadOnly}
         header={<FormLabel>{t('Catalog')}</FormLabel>}
         labelInValue
         loading={loadingCatalogs}
@@ -402,7 +412,7 @@ export function DatabaseSelector({
     return renderSelectRow(
       <Select
         ariaLabel={t('Select schema or type to search schemas')}
-        disabled={!currentDb || readOnly}
+        disabled={!currentDb || readOnly || dbSchemaReadOnly}
         header={<FormLabel>{t('Schema')}</FormLabel>}
         labelInValue
         loading={loadingSchemas}
