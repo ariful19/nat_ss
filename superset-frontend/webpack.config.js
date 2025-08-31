@@ -341,6 +341,13 @@ const config = {
     modules: ['node_modules', APP_DIR],
     alias: {
       react: path.resolve(path.join(APP_DIR, './node_modules/react')),
+      'react-dom': path.resolve(path.join(APP_DIR, './node_modules/react-dom')),
+      'react/jsx-runtime': path.resolve(
+        path.join(APP_DIR, './node_modules/react/jsx-runtime.js'),
+      ),
+      'react/jsx-dev-runtime': path.resolve(
+        path.join(APP_DIR, './node_modules/react/jsx-dev-runtime.js'),
+      ),
       // TODO: remove Handlebars alias once Handlebars NPM package has been updated to
       // correctly support webpack import (https://github.com/handlebars-lang/handlebars.js/issues/953)
       handlebars: 'handlebars/dist/handlebars.js',

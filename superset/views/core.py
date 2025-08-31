@@ -963,6 +963,24 @@ class Superset(BaseSupersetView):
         role = security_manager.find_role(role_name)
         if role is None:
             role = security_manager.add_role(role_name)
+            # Grant baseline permissions for newly created roles
+            # - all_datasource_access on all_datasource_access
+            # - can_read on Chart, Dashboard, Dataset
+            # - menu_access on Charts, Dashboards
+            baseline_perms = [
+                ("all_datasource_access", "all_datasource_access"),
+                ("can_read", "Chart"),
+                ("can_read", "Dashboard"),
+                ("can_read", "Dataset"),
+                ("menu_access", "Charts"),
+                ("menu_access", "Dashboards"),
+            ]
+            for perm_name, view_name in baseline_perms:
+                pvm = security_manager.add_permission_view_menu(perm_name, view_name)
+                # Associate permission with the role (idempotent)
+                security_manager.add_permission_role(role, pvm)
+            # Persist role + permissions promptly
+            db.session.commit()
 
         # Find or create the user
         user = security_manager.find_user(username=username)

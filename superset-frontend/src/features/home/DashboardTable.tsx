@@ -61,7 +61,10 @@ function DashboardTable({
     TableTab.Other,
   );
 
-  const filteredOtherTabData = otherTabData.filter(obj => !('viz_type' in obj));
+  // otherTabData may be undefined if recent activity fetch fails; guard it
+  const filteredOtherTabData = otherTabData?.filter(
+    obj => !('viz_type' in obj),
+  );
 
   const {
     state: { loading, resourceCollection: dashboards },
