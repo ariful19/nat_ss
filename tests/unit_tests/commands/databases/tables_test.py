@@ -17,6 +17,7 @@
 
 from unittest.mock import MagicMock
 
+import pandas as pd
 import pytest
 from pytest_mock import MockerFixture
 
@@ -42,6 +43,7 @@ def database_with_catalog(mocker: MockerFixture) -> MagicMock:
     database.get_all_view_names_in_schema.return_value = {
         ("view1", "schema1", "catalog1"),
     }
+    database.get_df.return_value = pd.DataFrame({"title_en": ["view1 label"]})
 
     DatabaseDAO = mocker.patch("superset.commands.database.tables.DatabaseDAO")  # noqa: N806
     DatabaseDAO.find_by_id.return_value = database
@@ -66,6 +68,7 @@ def database_without_catalog(mocker: MockerFixture) -> MagicMock:
     database.get_all_view_names_in_schema.return_value = {
         ("view1", "schema1", None),
     }
+    database.get_df.return_value = pd.DataFrame({"title_en": ["view1 label"]})
 
     DatabaseDAO = mocker.patch("superset.commands.database.tables.DatabaseDAO")  # noqa: N806
     DatabaseDAO.find_by_id.return_value = database
@@ -104,7 +107,7 @@ def test_tables_with_catalog(
         "result": [
             {"value": "table1", "type": "table", "extra": {"foo": "bar"}},
             {"value": "table2", "type": "table", "extra": None},
-            {"value": "view1", "type": "view"},
+            {"value": "view1", "type": "view", "label": "view1 label"},
         ],
     }
 
@@ -170,7 +173,7 @@ def test_tables_without_catalog(
         "result": [
             {"value": "table1", "type": "table", "extra": {"foo": "bar"}},
             {"value": "table2", "type": "table", "extra": None},
-            {"value": "view1", "type": "view"},
+            {"value": "view1", "type": "view", "label": "view1 label"},
         ],
     }
 

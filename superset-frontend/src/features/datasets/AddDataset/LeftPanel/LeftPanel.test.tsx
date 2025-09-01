@@ -147,9 +147,9 @@ beforeEach(() => {
   fetchMock.get(tablesEndpoint, {
     count: 3,
     result: [
-      { value: 'Sheet1', type: 'table', extra: null },
-      { value: 'Sheet2', type: 'table', extra: null },
-      { value: 'Sheet3', type: 'table', extra: null },
+      { value: 'Sheet1', type: 'view', extra: null },
+      { value: 'Sheet2', type: 'view', extra: null },
+      { value: 'Sheet3', type: 'view', extra: null },
     ],
   });
 });
@@ -234,7 +234,7 @@ test('searches for a table name', async () => {
     name: /select schema or type to search schemas/i,
   });
   const tableSelect = screen.getByRole('combobox', {
-    name: /select table or type to search tables/i,
+    name: /select view or type to search views/i,
   });
 
   await waitFor(() => expect(schemaSelect).toBeEnabled());
@@ -288,7 +288,7 @@ test('renders a warning icon when a table name has a preexisting dataset', async
     name: /select schema or type to search schemas/i,
   });
   const tableSelect = screen.getByRole('combobox', {
-    name: /select table or type to search tables/i,
+    name: /select view or type to search views/i,
   });
 
   await waitFor(() => expect(schemaSelect).toBeEnabled());

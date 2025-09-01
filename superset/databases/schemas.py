@@ -738,6 +738,9 @@ class DatabaseTablesResponse(Schema):
     )
     type = fields.String(metadata={"description": "table or view"})
     value = fields.String(metadata={"description": "The table or view name"})
+    label = fields.String(
+        metadata={"description": "Friendly label for the table or view"}
+    )
 
 
 class ValidateSQLRequest(Schema):

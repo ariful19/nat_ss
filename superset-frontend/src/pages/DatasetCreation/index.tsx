@@ -103,7 +103,10 @@ export default function AddDataset() {
   }, [id]);
 
   const HeaderComponent = () => (
-    <Header setDataset={setDataset} title={dataset?.table_name} />
+    <Header
+      setDataset={setDataset}
+      title={dataset?.dataset_name || dataset?.table_name}
+    />
   );
 
   const LeftPanelComponent = () => (

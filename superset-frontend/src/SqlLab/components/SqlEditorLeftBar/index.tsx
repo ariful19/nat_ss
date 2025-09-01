@@ -133,6 +133,7 @@ const SqlEditorLeftBar = ({
     tableNames: string[],
     catalogName: string | null,
     schemaName: string,
+    _tableLabels?: string[] | string,
   ) => {
     if (!schemaName) {
       return;

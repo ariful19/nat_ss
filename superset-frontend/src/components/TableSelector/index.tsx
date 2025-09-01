@@ -113,6 +113,7 @@ interface TableSelectorProps {
     value?: string | string[],
     catalog?: string | null,
     schema?: string,
+    tableLabel?: string | string[],
   ) => void;
   tableSelectMode?: 'single' | 'multiple';
   customTableOptionLabelRenderer?: (table: Table) => JSX.Element;
@@ -127,9 +128,9 @@ export interface TableOption {
 }
 
 export const TableOption = ({ table }: { table: Table }) => {
-  const { value, type, extra } = table;
+  const { value, type, extra, label } = table;
   return (
-    <TableLabel title={value}>
+    <TableLabel title={label || value}>
       {type === 'view' ? (
         <Icons.EyeOutlined iconSize="m" />
       ) : (
@@ -149,7 +150,7 @@ export const TableOption = ({ table }: { table: Table }) => {
           marginRight={4}
         />
       )}
-      {value}
+      {label || value}
     </TableLabel>
   );
 };
@@ -236,7 +237,7 @@ const TableSelector: FunctionComponent<TableSelectorProps> = ({
               ) : (
                 <TableOption table={table} />
               ),
-              text: table.value,
+              text: table.label || table.value,
             }))
         : [],
     [data, customTableOptionLabelRenderer, allowedTableTypes],
@@ -285,6 +286,9 @@ const TableSelector: FunctionComponent<TableSelectorProps> = ({
           : selectedOptions?.value,
         currentCatalog,
         currentSchema,
+        Array.isArray(selectedOptions)
+          ? selectedOptions.map(option => option?.text)
+          : selectedOptions?.text,
       );
     } else {
       setTableSelectValue(selectedOptions);
@@ -396,12 +400,18 @@ const TableSelector: FunctionComponent<TableSelectorProps> = ({
         handleError={handleError}
         onDbChange={readOnly || dbSchemaReadOnly ? undefined : internalDbChange}
         onEmptyResults={onEmptyResults}
-        onCatalogChange={readOnly || dbSchemaReadOnly ? undefined : internalCatalogChange}
+        onCatalogChange={
+          readOnly || dbSchemaReadOnly ? undefined : internalCatalogChange
+        }
         catalog={currentCatalog}
-        onSchemaChange={readOnly || dbSchemaReadOnly ? undefined : internalSchemaChange}
+        onSchemaChange={
+          readOnly || dbSchemaReadOnly ? undefined : internalSchemaChange
+        }
         schema={currentSchema}
         sqlLabMode={sqlLabMode}
-        isDatabaseSelectEnabled={isDatabaseSelectEnabled && !readOnly && !dbSchemaReadOnly}
+        isDatabaseSelectEnabled={
+          isDatabaseSelectEnabled && !readOnly && !dbSchemaReadOnly
+        }
         readOnly={readOnly}
         dbSchemaReadOnly={dbSchemaReadOnly}
       />

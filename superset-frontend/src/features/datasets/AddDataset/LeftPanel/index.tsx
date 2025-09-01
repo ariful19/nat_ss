@@ -16,7 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { useEffect, SetStateAction, Dispatch, useCallback, useMemo } from 'react';
+import {
+  useEffect,
+  SetStateAction,
+  Dispatch,
+  useCallback,
+  useMemo,
+} from 'react';
 import { styled, t } from '@superset-ui/core';
 import TableSelector, { TableOption } from 'src/components/TableSelector';
 import { EmptyState } from '@superset-ui/core/components';
@@ -128,11 +134,9 @@ export default function LeftPanel({
   const bootstrapData = getBootstrapData();
   const adminUser = isUserAdmin(bootstrapData.user);
   const datasetCreationDefaults =
-    bootstrapData?.common?.dataset_creation_defaults || {};
+    (bootstrapData?.common as any)?.dataset_creation_defaults || {};
   const defaultDbId = datasetCreationDefaults?.dbId as number | undefined;
-  const defaultSchema = datasetCreationDefaults?.schema as
-    | string
-    | undefined;
+  const defaultSchema = datasetCreationDefaults?.schema as string | undefined;
   const defaultDbName = datasetCreationDefaults?.dbName as string | undefined;
 
   // lock selectors only for non-admins when defaults are provided
@@ -163,10 +167,23 @@ export default function LeftPanel({
       });
     }
   };
-  const setTable = (tableName: string) => {
+  const setTable = (
+    tableName: string,
+    _catalog?: string | null,
+    _schema?: string,
+    tableLabel?: string | string[],
+  ) => {
     setDataset({
       type: DatasetActionType.SelectTable,
       payload: { name: 'table_name', value: tableName },
+    });
+    const datasetLabel = Array.isArray(tableLabel) ? tableLabel[0] : tableLabel;
+    setDataset({
+      type: DatasetActionType.ChangeDataset,
+      payload: {
+        name: 'dataset_name',
+        value: datasetLabel || tableName,
+      },
     });
   };
   useEffect(() => {

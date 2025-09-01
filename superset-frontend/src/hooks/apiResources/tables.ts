@@ -24,7 +24,7 @@ import { api, JsonResponse } from './queryApi';
 import { useSchemas } from './schemas';
 
 export interface Table {
-  label: string;
+  label?: string;
   value: string;
   type: string;
   extra?: {

@@ -116,24 +116,36 @@ class TablesDatabaseCommand(BaseCommand):
                 ).all()
             }
 
-            options = sorted(
-                [
-                    {
-                        "value": table.table,
-                        "type": "table",
-                        "extra": extra_dict_by_name.get(table.table, None),
-                    }
-                    for table in tables
-                ]
-                + [
-                    {
-                        "value": view.table,
-                        "type": "view",
-                    }
-                    for view in views
-                ],
-                key=lambda item: item["value"],
-            )
+            options = [
+                {
+                    "value": table.table,
+                    "type": "table",
+                    "extra": extra_dict_by_name.get(table.table, None),
+                }
+                for table in tables
+            ]
+
+            for view in views:
+                label = None
+                try:
+                    table_identifier = self._model.quote_identifier(view.table)
+                    sql = f"SELECT title_en FROM {table_identifier} LIMIT 1"  # noqa: S608
+                    df = self._model.get_df(
+                        sql,
+                        catalog=self._catalog_name,
+                        schema=self._schema_name,
+                    )
+                    if not df.empty and "title_en" in df.columns:
+                        label = str(df["title_en"].iloc[0])
+                except Exception:  # pylint: disable=broad-except
+                    label = None
+
+                view_option = {"value": view.table, "type": "view"}
+                if label:
+                    view_option["label"] = label
+                options.append(view_option)
+
+            options = sorted(options, key=lambda item: item["value"])
 
             payload = {"count": len(tables) + len(views), "result": options}
             return payload

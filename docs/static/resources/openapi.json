@@ -4671,6 +4671,10 @@
           "value": {
             "description": "The table or view name",
             "type": "string"
+          },
+          "label": {
+            "description": "Friendly label for the table or view",
+            "type": "string"
           }
         },
         "type": "object"

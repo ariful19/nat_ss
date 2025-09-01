@@ -659,6 +659,11 @@ class BaseDatasource(AuditMixinNullable, ImportExportMixin):  # pylint: disable=
         current user. A custom username can be passed when the user is not present in the
         Flask global namespace.
 
+        Additionally, apply a session-based filter which restricts rows by
+        `office_er_nam` when the current user's session contains an `officeName`
+        and the dataset has a column named `office_er_nam`. Admin users are
+        exempt from this filter.
+
         :param template_processor: The template processor to apply to the filters.
         :returns: A list of SQL clauses to be ANDed together.
         """  # noqa: E501
@@ -667,6 +672,7 @@ class BaseDatasource(AuditMixinNullable, ImportExportMixin):  # pylint: disable=
         all_filters: list[TextClause] = []
         filter_groups: dict[Union[int, str], list[TextClause]] = defaultdict(list)
         try:
+            # Standard RLS rules configured in the DB
             for filter_ in security_manager.get_rls_filters(self):
                 clause = self.text(
                     f"({template_processor.process_template(filter_.clause)})"
@@ -676,6 +682,7 @@ class BaseDatasource(AuditMixinNullable, ImportExportMixin):  # pylint: disable=
                 else:
                     all_filters.append(clause)
 
+            # Guest token RLS rules (for embedded dashboards)
             if is_feature_enabled("EMBEDDED_SUPERSET"):
                 for rule in security_manager.get_guest_rls_filters(self):
                     clause = self.text(
@@ -683,6 +690,36 @@ class BaseDatasource(AuditMixinNullable, ImportExportMixin):  # pylint: disable=
                     )
                     all_filters.append(clause)
 
+            # Session-driven office filter (non-admins only)
+            try:
+                from flask import session  # import here to avoid hard dependency
+
+                # Skip if admin
+                if not security_manager.is_admin():
+                    office_name = session.get("officeName")
+                    if office_name:
+                        # Find office column by exact or case-insensitive match
+                        target_col_obj = None
+                        for c in self.columns:
+                            if c.column_name == "office_er_nam" or c.column_name.lower() == "office_er_nam":
+                                target_col_obj = c
+                                break
+
+                        if target_col_obj is not None:
+                            # Build a safe SQLAlchemy expression: office_er_nam = :literal
+                            col_expr = self.convert_tbl_column_to_sqla_col(
+                                tbl_column=target_col_obj,
+                                template_processor=template_processor,
+                            )
+                            comp = col_expr == sa.literal(office_name)
+                            # Note: returning a binary expression is accepted by
+                            # the downstream query builder (and_(*filters))
+                            all_filters.append(comp)  # type: ignore[arg-type]
+            except Exception:  # pylint: disable=broad-except
+                # Never block queries if session inspection fails
+                pass
+
+            # Merge grouped filters (OR within group, AND across groups)
             grouped_filters = [or_(*clauses) for clauses in filter_groups.values()]
             all_filters.extend(grouped_filters)
             return all_filters
