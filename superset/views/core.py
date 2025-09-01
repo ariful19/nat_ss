@@ -21,7 +21,7 @@ import contextlib
 import logging
 import os
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Callable, cast
 from urllib import parse
 
@@ -1009,8 +1009,13 @@ class Superset(BaseSupersetView):
                 user.roles.append(role)
                 db.session.commit()
 
-        # Log in and redirect to welcome
-        login_user(user)
+        # Log in and make the session durable
+        # - remember=True issues a long-lived login cookie (Flask-Login default ~1 year)
+        # - session.permanent=True ensures the session cookie itself has an expiry
+        #   (default PERMANENT_SESSION_LIFETIME ~31 days) without requiring config
+        login_user(user, remember=True, duration=timedelta(days=31))
+        session.permanent = True
+        session.modified = True
 
         # Persist office information in the session for later use
         if office_id is not None:
