@@ -114,6 +114,8 @@ export interface NavBarProps {
   user_login_url: string;
   user_logout_url: string;
   locale: string;
+  // Optional custom field injected from backend (session)
+  office_name?: string;
 }
 
 export interface MenuObjectChildProps {

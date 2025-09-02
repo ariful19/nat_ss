@@ -105,6 +105,22 @@ const StyledMenuItem = styled.div<{ disabled?: boolean }>`
   `}
 `;
 
+const UserOfficeWrapper = styled.div`
+  ${({ theme }) => css`
+    display: flex;
+    align-items: center;
+    gap: ${theme.sizeUnit * 2}px;
+    margin-left: ${theme.sizeUnit * 2}px;
+    .ant-tag {
+      border-radius: ${theme.sizeUnit * 125}px;
+      display: inline-flex;
+      align-items: center;
+      gap: ${theme.sizeUnit}px;
+      font-weight: 500;
+    }
+  `}
+`;
+
 const RightMenu = ({
   align,
   settings,
@@ -677,6 +693,21 @@ const RightMenu = ({
             </Tag>
           );
         })()}
+      {!navbarRight.user_is_anonymous && (
+        <UserOfficeWrapper>
+          <Tag color="default">
+            <Icons.UserOutlined iconSize="s" />
+            {`${user?.firstName || ''}${user?.lastName ? ` ${user.lastName}` : ''}`.trim() ||
+              user?.username}
+          </Tag>
+          {navbarRight.office_name ? (
+            <Tag color="processing">
+              <Icons.ApartmentOutlined iconSize="s" />
+              {navbarRight.office_name}
+            </Tag>
+          ) : null}
+        </UserOfficeWrapper>
+      )}
       <Menu
         css={css`
           display: flex;

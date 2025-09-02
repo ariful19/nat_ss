@@ -294,6 +294,10 @@ def menu_data(user: User) -> dict[str, Any]:
             "user_logout_url": appbuilder.get_url_for_logout,
             "user_login_url": appbuilder.get_url_for_login,
             "locale": session.get("locale", "en"),
+            # Custom bootstrap: expose officeName from session (if present)
+            # so the frontend can render the active office next to the user name
+            # in the top navigation. Kept optional to avoid breaking default setups.
+            "office_name": session.get("officeName"),
         },
     }
 
