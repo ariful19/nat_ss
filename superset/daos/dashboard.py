@@ -41,6 +41,7 @@ from superset.models.slice import Slice
 from superset.utils import json
 from superset.utils.core import get_user_id
 from superset.utils.dashboard_filter_scopes_converter import copy_filter_scopes
+from flask import session
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +74,24 @@ class DashboardDAO(BaseDAO[Dashboard]):
             dashboard.raise_for_access()
         except SupersetSecurityException as ex:
             raise DashboardAccessDeniedError() from ex
+
+        # Additional office-based access enforcement:
+        # If dashboard metadata contains a non-empty list under key 'office_access',
+        # then restrict viewing to admins or users whose session['officeName'] is
+        # included in that list.
+        try:
+            from superset import security_manager  # local import to avoid cycles
+
+            if not security_manager.is_admin():
+                md = dashboard.params_dict or {}
+                offices = md.get("office_access") or []
+                if isinstance(offices, list) and len(offices) > 0:
+                    user_office = session.get("officeName")
+                    if not user_office or user_office not in offices:
+                        raise DashboardAccessDeniedError()
+        except Exception:
+            # Fail closed only when metadata explicitly restricts; otherwise ignore
+            pass
 
         return dashboard
 

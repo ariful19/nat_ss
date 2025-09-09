@@ -23,6 +23,8 @@ from sqlalchemy import and_, or_
 from sqlalchemy.orm.query import Query
 
 from superset import db, is_feature_enabled, security_manager
+from flask import session
+from superset.utils import json
 from superset.connectors.sqla.models import SqlaTable
 from superset.models.core import Database
 from superset.models.dashboard import Dashboard, is_uuid
@@ -189,6 +191,40 @@ class DashboardAccessFilter(BaseFilter):  # pylint: disable=too-few-public-metho
                 *feature_flagged_filters,
             )
         )
+
+        # Office-based access filtering
+        # If a dashboard has a non-empty metadata key 'office_access',
+        # only users whose session['officeName'] matches should see it.
+        try:
+            user_office = session.get("officeName")
+
+            # Always show dashboards with no restriction; filter out restricted ones
+            # when the user doesn't match.
+            ids_with_office_match: list[int] = []
+            ids_without_restriction: list[int] = []
+
+            for dash_id, md in (
+                db.session.query(Dashboard.id, Dashboard.json_metadata).all()
+            ):
+                try:
+                    md_dict = json.loads(md) if md else {}
+                except Exception:
+                    md_dict = {}
+                offices = md_dict.get("office_access") or []
+                if not offices:  # unrestricted dashboards
+                    ids_without_restriction.append(dash_id)
+                else:
+                    if user_office and user_office in offices:
+                        ids_with_office_match.append(dash_id)
+
+            # If there are no dashboards to filter by offices, keep query intact
+            allowed_ids = set(ids_without_restriction) | set(ids_with_office_match)
+            if allowed_ids:
+                query = query.filter(Dashboard.id.in_(allowed_ids))
+        except Exception:
+            # If anything goes wrong here, don't block access further than
+            # the standard filters already applied above.
+            pass
 
         return query
 

@@ -226,6 +226,7 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
         from superset.views.user_info import UserInfoView
         from superset.views.user_registrations import UserRegistrationsView
         from superset.views.users.api import CurrentUserRestApi, UserRestApi
+        from superset.views.offices.api import OfficesRestApi
         from superset.views.users_list import UsersListView
 
         set_app_error_handlers(self.superset_app)
@@ -273,6 +274,8 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
         appbuilder.add_api(SqlLabRestApi)
         appbuilder.add_api(SqlLabPermalinkRestApi)
         appbuilder.add_api(LogRestApi)
+        # Custom helper API for office-based access options
+        appbuilder.add_api(OfficesRestApi)
 
         if feature_flag_manager.is_feature_enabled("ENABLE_EXTENSIONS"):
             from superset.extensions.api import ExtensionsRestApi
@@ -620,7 +623,8 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
 
     def register_request_handlers(self) -> None:
         """Register app-level request handlers"""
-        from flask import Response
+        from flask import Response, session
+        from flask_login import user_logged_out
 
         @self.superset_app.after_request
         def apply_http_headers(response: Response) -> Response:
@@ -651,6 +655,15 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
                 )
 
             return {"bootstrap_data": serialize_bootstrap_data}
+
+        # Clear office-specific session values on logout
+        @user_logged_out.connect_via(self.superset_app)
+        def _on_user_logged_out(sender, user):  # type: ignore[no-redef]
+            try:
+                session.pop("officeName", None)
+                session.pop("officeId", None)
+            except Exception:  # pragma: no cover - avoid blocking logout
+                pass
 
     def check_and_warn_database_connection(self) -> None:
         """Check database connection and warn if unavailable"""

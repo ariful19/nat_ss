@@ -21,6 +21,8 @@ import { styled, t } from '@superset-ui/core';
 
 type Database = {
   database_name: string;
+  // Optional when only name is requested from the API
+  id?: number;
 };
 
 export type Dataset = {
@@ -89,14 +91,17 @@ const StyledLabelDetail = styled.span`
 const isValidValue = (value: string): boolean =>
   !['null', 'none'].includes(value.toLowerCase()) && value.trim() !== '';
 
-export const DatasetSelectLabel = (item: Dataset) => (
+// Optionally accept a custom display name to show instead of `table_name`.
+export const DatasetSelectLabel = (item: Dataset, displayName?: string) => (
   <Tooltip
     mouseEnterDelay={0.2}
     placement="right"
     title={
       <TooltipContent>
         <div className="tooltip-header">
-          {item.table_name && isValidValue(item.table_name)
+          {displayName && isValidValue(displayName)
+            ? displayName
+            : item.table_name && isValidValue(item.table_name)
             ? item.table_name
             : t('Not defined')}
         </div>
@@ -116,7 +121,9 @@ export const DatasetSelectLabel = (item: Dataset) => (
   >
     <StyledLabelContainer>
       <StyledLabel>
-        {item.table_name && isValidValue(item.table_name)
+        {displayName && isValidValue(displayName)
+          ? displayName
+          : item.table_name && isValidValue(item.table_name)
           ? item.table_name
           : item.database.database_name}
       </StyledLabel>

@@ -129,6 +129,7 @@ const PropertiesModal = ({
   const [customCss, setCustomCss] = useState('');
   const [refreshFrequency, setRefreshFrequency] = useState(0);
   const [selectedThemeId, setSelectedThemeId] = useState<number | null>(null);
+  const [allowedOffices, setAllowedOffices] = useState<string[]>([]);
   const [themes, setThemes] = useState<
     Array<{
       id: number;
@@ -191,6 +192,11 @@ const PropertiesModal = ({
       setCustomCss(css || '');
       setCurrentColorScheme(metadata?.color_scheme);
       setSelectedThemeId(theme?.id || null);
+      setAllowedOffices(
+        Array.isArray(metadata?.office_access)
+          ? (metadata?.office_access as string[])
+          : [],
+      );
 
       const metaDataCopy = omit(metadata, [
         'positions',
@@ -329,6 +335,8 @@ const PropertiesModal = ({
         ? resettableCustomLabels
         : false;
     const jsonMetadataObj = getJsonMetadata();
+    // persist office access selection
+    jsonMetadataObj.office_access = allowedOffices;
     jsonMetadataObj.refresh_frequency = refreshFrequency;
     const customLabelColors = jsonMetadataObj.label_colors || {};
     const updatedDashboardMetadata = {
@@ -690,6 +698,8 @@ const PropertiesModal = ({
                   onChangeRoles={handleOnChangeRoles}
                   onChangeTags={handleChangeTags}
                   onClearTags={handleClearTags}
+                  allowedOffices={allowedOffices}
+                  onChangeAllowedOffices={setAllowedOffices}
                 />
               ),
             },

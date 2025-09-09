@@ -162,6 +162,8 @@ class DashboardJSONMetadataSchema(Schema):
     map_label_colors = fields.Dict()
     color_scheme_domain = fields.List(fields.Str())
     cross_filters_enabled = fields.Boolean(dump_default=True)
+    # Custom: restrict dashboard visibility by offices; saved as a list of office names
+    office_access = fields.List(fields.String())
     # used for v0 import/export
     import_time = fields.Integer()
     remote_id = fields.Integer()

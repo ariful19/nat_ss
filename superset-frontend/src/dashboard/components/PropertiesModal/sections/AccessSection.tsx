@@ -16,8 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { useMemo } from 'react';
-import { isFeatureEnabled, FeatureFlag, t } from '@superset-ui/core';
+import { useEffect, useMemo, useState } from 'react';
+import { isFeatureEnabled, FeatureFlag, SupersetClient, t } from '@superset-ui/core';
 import { AsyncSelect } from '@superset-ui/core/components';
 import { type TagType } from 'src/components';
 import { loadTags } from 'src/components/Tag/utils';
@@ -43,6 +43,9 @@ interface AccessSectionProps {
   onChangeRoles: (roles: { value: number; label: string }[]) => void;
   onChangeTags: (tags: { label: string; value: number }[]) => void;
   onClearTags: () => void;
+  // Offices access control
+  allowedOffices?: string[];
+  onChangeAllowedOffices?: (values: string[]) => void;
 }
 
 const AccessSection = ({
@@ -54,8 +57,14 @@ const AccessSection = ({
   onChangeRoles,
   onChangeTags,
   onClearTags,
+  allowedOffices = [],
+  onChangeAllowedOffices,
 }: AccessSectionProps) => {
   const { loadAccessOptions } = useAccessOptions();
+  const [officeOptions, setOfficeOptions] = useState<
+    { value: string; label: string }[]
+  >([]);
+  const [officesEnabled, setOfficesEnabled] = useState(false);
 
   const ownersSelectValue = useMemo(
     () =>
@@ -83,6 +92,46 @@ const AccessSection = ({
       })),
     [tags],
   );
+
+  const officesSelectValue = useMemo(
+    () => (allowedOffices || []).map(name => ({ value: name, label: name })),
+    [allowedOffices],
+  );
+
+  useEffect(() => {
+    // Load office options once when modal is shown
+    let cancelled = false;
+    SupersetClient.get({ endpoint: '/api/v1/offices/options' })
+      .then(({ json }) => {
+        const { result } = json;
+        if (!result) return;
+        if (cancelled) return;
+        if (result.enabled && Array.isArray(result.options)) {
+          setOfficesEnabled(true);
+          const opts = result.options.map((o: any) => ({
+            value: o.value ?? o.label,
+            label: o.label ?? o.value,
+          }));
+          setOfficeOptions(opts);
+          // If nothing selected yet and session has officeName, select it by default
+          if (
+            onChangeAllowedOffices &&
+            Array.isArray(allowedOffices) &&
+            allowedOffices.length === 0 &&
+            result.defaultOffice
+          ) {
+            onChangeAllowedOffices([result.defaultOffice]);
+          }
+        }
+      })
+      .catch(() => {
+        setOfficesEnabled(false);
+        setOfficeOptions([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <>
@@ -153,6 +202,33 @@ const AccessSection = ({
             allowClear
             showSearch
             placeholder={t('Search tags')}
+          />
+        </ModalFormField>
+      )}
+      {officesEnabled && (
+        <ModalFormField
+          label={t('Offices')}
+          testId="dashboard-offices-field"
+          helperText={t(
+            'Limit visibility by offices. If set, only users whose session officeName matches any selected office can view this dashboard (non-admins).',
+          )}
+          bottomSpacing={true}
+        >
+          <AsyncSelect
+            data-test="dashboard-offices-select"
+            ariaLabel={t('Offices')}
+            mode="multiple"
+            value={officesSelectValue}
+            options={() => Promise.resolve({
+              data: officeOptions,
+              totalCount: officeOptions.length,
+            })}
+            onChange={(items: { value: string; label: string }[]) =>
+              onChangeAllowedOffices?.(items.map(i => i.value))
+            }
+            allowClear
+            showSearch
+            placeholder={t('Select offices')}
           />
         </ModalFormField>
       )}

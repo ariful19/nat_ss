@@ -175,6 +175,9 @@ export class ChartCreation extends PureComponent<
   ChartCreationProps,
   ChartCreationState
 > {
+  // Cache of view labels per `dbId|schema` -> { tableName: label }
+  private viewLabelsCache: Record<string, Record<string, string>> = {};
+
   constructor(props: ChartCreationProps) {
     super(props);
     this.state = {
@@ -235,13 +238,14 @@ export class ChartCreation extends PureComponent<
     }
   }
 
-  loadDatasources(search: string, page: number, pageSize: number) {
+  async loadDatasources(search: string, page: number, pageSize: number) {
     const query = rison.encode({
       columns: [
         'id',
         'table_name',
         'datasource_type',
         'database.database_name',
+        'database.id',
         'schema',
       ],
       filters: [{ col: 'table_name', opr: 'ct', value: search }],
@@ -250,24 +254,84 @@ export class ChartCreation extends PureComponent<
       order_column: 'table_name',
       order_direction: 'asc',
     });
-    return SupersetClient.get({
+
+    const response: JsonResponse = await SupersetClient.get({
       endpoint: `/api/v1/dataset/?q=${query}`,
-    }).then((response: JsonResponse) => {
-      const list: {
-        id: number;
-        label: string | ReactNode;
-        value: string;
-      }[] = response.json.result.map((item: Dataset) => ({
+    });
+
+    const datasets: Dataset[] = response.json.result as Dataset[];
+
+    // Build a set of unique (dbId|schema) to fetch view labels in bulk
+    const groups = new Map<string, { dbId: number; schema: string }>();
+    datasets.forEach(item => {
+      const dbId = (item.database as any)?.id as number | undefined;
+      const schema = item.schema;
+      if (dbId && schema) {
+        const key = `${dbId}|${schema}`;
+        if (!groups.has(key)) {
+          groups.set(key, { dbId, schema });
+        }
+      }
+    });
+
+    // Fetch labels for groups not in cache
+    const fetchPromises: Promise<void>[] = [];
+    groups.forEach(({ dbId, schema }, key) => {
+      if (!this.viewLabelsCache[key]) {
+        const endpoint = `/api/v1/database/${dbId}/tables/?q=${rison.encode({
+          schema_name: encodeURIComponent(schema),
+        })}`;
+        fetchPromises.push(
+          SupersetClient.get({ endpoint }).then((res: JsonResponse) => {
+            const options = res.json.result as Array<{
+              value: string;
+              label?: string;
+              type: string;
+            }>;
+            const map: Record<string, string> = {};
+            options.forEach(opt => {
+              if (opt.label) {
+                map[opt.value] = opt.label;
+              }
+            });
+            this.viewLabelsCache[key] = map;
+          }),
+        );
+      }
+    });
+
+    if (fetchPromises.length) {
+      await Promise.all(fetchPromises);
+    }
+
+    const list: {
+      id: number;
+      label: string | ReactNode;
+      value: string;
+      customLabel: string;
+    }[] = datasets.map((item: Dataset) => {
+      const dbId = (item.database as any)?.id as number | undefined;
+      const schema = item.schema;
+      let displayName: string | undefined;
+      if (dbId && schema) {
+        const key = `${dbId}|${schema}`;
+        const groupMap = this.viewLabelsCache[key];
+        displayName = groupMap?.[item.table_name];
+      }
+      const option = {
         id: item.id,
         value: `${item.id}__${item.datasource_type}`,
-        label: DatasetSelectLabel(item),
-        customLabel: item.table_name,
-      }));
-      return {
-        data: list,
-        totalCount: response.json.count,
+        label: DatasetSelectLabel(item, displayName),
+        // Make both the friendly label and physical name searchable
+        customLabel: `${displayName || ''} ${item.table_name}`.trim(),
       };
+      return option;
     });
+
+    return {
+      data: list,
+      totalCount: response.json.count,
+    };
   }
 
   render() {
