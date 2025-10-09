@@ -150,7 +150,9 @@ ENV SUPERSET_HOME="/app/superset_home" \
     SUPERSET_ENV="production" \
     FLASK_APP="superset.app:create_app()" \
     PYTHONPATH="/app/pythonpath" \
-    SUPERSET_PORT="8088"
+    SUPERSET_PORT="8088" \
+    CMDSTAN="/opt/cmdstan" \
+    CMDSTANPY_CACHE_DIR="/opt/.cmdstanpy"
 
 # Copy the entrypoints, make them executable in userspace
 COPY --chmod=755 docker/entrypoints /app/docker/entrypoints
@@ -232,6 +234,34 @@ RUN --mount=type=cache,target=${SUPERSET_HOME}/.cache/uv \
     uv pip install -e .
 RUN python -m compileall /app/superset
 
+# Pre-install CmdStan and pre-compile Prophet model to enable forecasts at runtime
+USER root
+RUN /app/docker/apt-install.sh build-essential \
+ && python - <<'PY'
+from cmdstanpy import install_cmdstan
+from prophet import Prophet
+import pandas as pd
+import os
+
+# Ensure deterministic install locations
+cmdstan_dir = os.environ.get('CMDSTAN', '/opt/cmdstan')
+os.makedirs(cmdstan_dir, exist_ok=True)
+install_cmdstan(dir=cmdstan_dir)
+
+# Trigger Prophet model compilation once so runtime has the binary ready
+df = pd.DataFrame({
+    'ds': pd.date_range('2020-01-01', periods=5, freq='D'),
+    'y': [1, 2, 3, 4, 5],
+})
+Prophet().fit(df)
+PY
+# Clean up build tools and fix ownership
+RUN apt-get purge -yqq build-essential \
+ && apt-get autoremove -yqq \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* \
+ && chown -R superset:superset /opt/cmdstan /opt/.cmdstanpy ${SUPERSET_HOME}
+
 USER superset
 
 ######################################################################
@@ -263,6 +293,31 @@ RUN --mount=type=cache,target=${SUPERSET_HOME}/.cache/uv \
 
 RUN uv pip install .[postgres]
 RUN python -m compileall /app/superset
+
+# Pre-install CmdStan and pre-compile Prophet model to enable forecasts at runtime
+USER root
+RUN /app/docker/apt-install.sh build-essential \
+ && python - <<'PY'
+from cmdstanpy import install_cmdstan
+from prophet import Prophet
+import pandas as pd
+import os
+
+cmdstan_dir = os.environ.get('CMDSTAN', '/opt/cmdstan')
+os.makedirs(cmdstan_dir, exist_ok=True)
+install_cmdstan(dir=cmdstan_dir)
+
+df = pd.DataFrame({
+    'ds': pd.date_range('2020-01-01', periods=5, freq='D'),
+    'y': [1, 2, 3, 4, 5],
+})
+Prophet().fit(df)
+PY
+RUN apt-get purge -yqq build-essential \
+ && apt-get autoremove -yqq \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* \
+ && chown -R superset:superset /opt/cmdstan /opt/.cmdstanpy ${SUPERSET_HOME}
 
 USER superset
 
