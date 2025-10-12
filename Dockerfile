@@ -260,6 +260,7 @@ RUN apt-get purge -yqq build-essential \
  && apt-get autoremove -yqq \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* \
+ && mkdir -p /opt/.cmdstanpy \
  && chown -R superset:superset /opt/cmdstan /opt/.cmdstanpy ${SUPERSET_HOME}
 
 USER superset
@@ -317,6 +318,7 @@ RUN apt-get purge -yqq build-essential \
  && apt-get autoremove -yqq \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* \
+ && mkdir -p /opt/.cmdstanpy \
  && chown -R superset:superset /opt/cmdstan /opt/.cmdstanpy ${SUPERSET_HOME}
 
 USER superset
