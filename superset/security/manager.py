@@ -1123,6 +1123,9 @@ class SupersetSecurityManager(  # pylint: disable=too-many-public-methods
         self.add_permission_view_menu("can_drill", "Dashboard")
         self.add_permission_view_menu("can_tag", "Chart")
         self.add_permission_view_menu("can_tag", "Dashboard")
+        # Custom REST permissions
+        self.add_permission_view_menu("list_roles", "RoleRestAPI")
+        self.add_permission_view_menu("list_users", "UserRestApi")
 
     def create_missing_perms(self) -> None:
         """
@@ -1189,6 +1192,21 @@ class SupersetSecurityManager(  # pylint: disable=too-many-public-methods
         self.set_role("Alpha", self._is_alpha_pvm, pvms)
         self.set_role("Gamma", self._is_gamma_pvm, pvms)
         self.set_role("sql_lab", self._is_sql_lab_pvm, pvms)
+
+        # Ensure custom AUTH_ROLE_ADMIN stays in sync with builtin Admin role
+        auth_role_admin = get_conf().get("AUTH_ROLE_ADMIN")
+        if auth_role_admin and auth_role_admin != "Admin":
+            try:
+                logger.info(
+                    "Syncing custom auth role '%s' with Admin permissions",
+                    auth_role_admin,
+                )
+                self.set_role(auth_role_admin, self._is_admin_pvm, pvms)
+            except Exception:  # pragma: no cover - defensive, should never happen
+                logger.exception(
+                    "Unable to sync Admin permissions to custom AUTH_ROLE_ADMIN '%s'",
+                    auth_role_admin,
+                )
 
         # Configure public role
         if get_conf()["PUBLIC_ROLE_LIKE"]:

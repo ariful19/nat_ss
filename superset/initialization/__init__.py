@@ -226,7 +226,13 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
         from superset.views.user_info import UserInfoView
         from superset.views.user_registrations import UserRegistrationsView
         from superset.views.users.api import CurrentUserRestApi, UserRestApi
-        from superset.views.offices.api import OfficesRestApi
+        try:
+            from superset.views.offices.api import OfficesRestApi
+        except ModuleNotFoundError:
+            OfficesRestApi = None
+            logger.warning(
+                "OfficesRestApi module not found; skipping office options endpoint"
+            )
         from superset.views.users_list import UsersListView
 
         set_app_error_handlers(self.superset_app)
@@ -275,7 +281,8 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
         appbuilder.add_api(SqlLabPermalinkRestApi)
         appbuilder.add_api(LogRestApi)
         # Custom helper API for office-based access options
-        appbuilder.add_api(OfficesRestApi)
+        if OfficesRestApi is not None:
+            appbuilder.add_api(OfficesRestApi)
 
         if feature_flag_manager.is_feature_enabled("ENABLE_EXTENSIONS"):
             from superset.extensions.api import ExtensionsRestApi
