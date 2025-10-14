@@ -29,20 +29,22 @@ x-superset-volumes: &superset-volumes
   # /app/pythonpath_docker will be appended to the PYTHONPATH in the final container
   - ./docker:/app/docker
   - ./superset:/app/superset
+  - ./superset-core:/app/superset-core
   - ./superset-frontend:/app/superset-frontend
   - superset_home:/app/superset_home
   - ./tests:/app/tests
-  - ./superset_config.py:/app/superset_config.py:ro
+  - superset_data:/app/data
 x-common-build: &common-build
   context: .
   target: ${SUPERSET_BUILD_TARGET:-dev} # can use `dev` (default) or `lean`
   cache_from:
-    - apache/superset-cache:3.10-slim-bookworm
+    - apache/superset-cache:3.10-slim-trixie
   args:
     DEV_MODE: "true"
     INCLUDE_CHROMIUM: ${INCLUDE_CHROMIUM:-false}
     INCLUDE_FIREFOX: ${INCLUDE_FIREFOX:-false}
     BUILD_TRANSLATIONS: ${BUILD_TRANSLATIONS:-false}
+    LOAD_EXAMPLES_DUCKDB: ${LOAD_EXAMPLES_DUCKDB:-true}
 
 services:
   nginx:
@@ -55,7 +57,7 @@ services:
     container_name: superset_nginx
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "8090:80"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
@@ -83,7 +85,7 @@ services:
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
-      - db_home:/var/lib/postgresql/data
+      - ../superset_db_home:/var/lib/postgresql/data
       - ./docker/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
 
   superset:
@@ -92,8 +94,6 @@ services:
         required: true
       - path: docker/.env-local # optional override
         required: false
-    environment:
-      - SUPERSET_CONFIG_PATH=/app/superset_config.py
     build:
       <<: *common-build
     container_name: superset_app
@@ -110,6 +110,8 @@ services:
       superset-init:
         condition: service_completed_successfully
     volumes: *superset-volumes
+    environment:
+      SUPERSET__SQLALCHEMY_EXAMPLES_URI: "duckdb:////app/data/examples.duckdb"
 
   superset-websocket:
     container_name: superset_websocket
@@ -154,8 +156,6 @@ services:
         required: true
       - path: docker/.env-local # optional override
         required: false
-    environment:
-      - SUPERSET_CONFIG_PATH=/app/superset_config.py
     depends_on:
       db:
         condition: service_started
@@ -163,6 +163,8 @@ services:
         condition: service_started
     user: *superset-user
     volumes: *superset-volumes
+    environment:
+      SUPERSET__SQLALCHEMY_EXAMPLES_URI: "duckdb:////app/data/examples.duckdb"
     healthcheck:
       disable: true
 
@@ -207,7 +209,6 @@ services:
         required: false
     environment:
       CELERYD_CONCURRENCY: 2
-      SUPERSET_CONFIG_PATH: /app/superset_config.py
     restart: unless-stopped
     depends_on:
       superset-init:
@@ -232,8 +233,6 @@ services:
         required: true
       - path: docker/.env-local # optional override
         required: false
-    environment:
-      - SUPERSET_CONFIG_PATH=/app/superset_config.py
     restart: unless-stopped
     depends_on:
       - superset-worker
@@ -276,4 +275,6 @@ volumes:
   db_home:
     external: false
   redis:
+    external: false
+  superset_data:
     external: false
