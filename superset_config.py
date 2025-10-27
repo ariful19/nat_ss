@@ -31,6 +31,14 @@ in superset/config.py by ariful19, now moved here to keep the upstream file clea
 import os
 from typing import Any, Dict
 
+# Enable English and Bangla translations using bundled Babel assets
+BABEL_DEFAULT_LOCALE = "en"
+BABEL_DEFAULT_FOLDER = "superset/translations"
+LANGUAGES = {
+    "en": {"flag": "us", "name": "English"},
+    "bn": {"flag": "bd", "name": "Bangla"},
+}
+
 # Use secret from environment if provided (recommended for production)
 SECRET_KEY = os.getenv("SUPERSET_SECRET_KEY", "CHANGE_ME_SUPERSET")
 
