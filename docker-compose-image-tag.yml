@@ -29,6 +29,8 @@ x-superset-volumes:
   &superset-volumes # /app/pythonpath_docker will be appended to the PYTHONPATH in the final container
   - ./docker:/app/docker
   - superset_home:/app/superset_home
+  # Mount project-level Superset config
+  - ./superset_config.py:/app/superset_config.py:ro
 
 services:
   redis:
@@ -68,6 +70,8 @@ services:
       superset-init:
         condition: service_completed_successfully
     volumes: *superset-volumes
+    environment:
+      SUPERSET_CONFIG_PATH: "/app/superset_config.py"
 
   superset-init:
     image: *superset-image
@@ -85,6 +89,8 @@ services:
         condition: service_started
     user: "root"
     volumes: *superset-volumes
+    environment:
+      SUPERSET_CONFIG_PATH: "/app/superset_config.py"
     healthcheck:
       disable: true
 
@@ -103,6 +109,8 @@ services:
         condition: service_completed_successfully
     user: "root"
     volumes: *superset-volumes
+    environment:
+      SUPERSET_CONFIG_PATH: "/app/superset_config.py"
     healthcheck:
       test:
         [
@@ -125,6 +133,8 @@ services:
         condition: service_completed_successfully
     user: "root"
     volumes: *superset-volumes
+    environment:
+      SUPERSET_CONFIG_PATH: "/app/superset_config.py"
     healthcheck:
       disable: true
 

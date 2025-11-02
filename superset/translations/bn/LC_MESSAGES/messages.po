@@ -5502,7 +5502,7 @@ msgid "Histogram"
 msgstr "হিস্টোগ্রাম"
 
 msgid "Home"
-msgstr "বাড়ি"
+msgstr "হোম"
 
 msgid "Horizon Chart"
 msgstr "দিগন্ত চার্ট"
@@ -13579,3 +13579,108 @@ msgstr "জুম এলাকা"
 
 msgid "© Layer attribution"
 msgstr "© স্তর অ্যাট্রিবিউশন"
+
+msgid "Dashboards"
+msgstr "ড্যাশবোর্ড"
+
+msgid "Charts"
+msgstr "চার্ট"
+
+msgid "Datasets"
+msgstr "ডেটাসেট"
+
+msgid "SQL"
+msgstr "SQL"
+
+msgid "SQL Lab"
+msgstr "SQL ল্যাব"
+
+msgid "Saved Queries"
+msgstr "সংরক্ষিত ক্যোয়ারী"
+
+msgid "Query History"
+msgstr "কুয়েরি ইতিহাস"
+
+msgid "Security"
+msgstr "নিরাপত্তা"
+
+msgid "List Roles"
+msgstr "রোল তালিকা"
+
+msgid "List Users"
+msgstr "ব্যবহারকারী তালিকা"
+
+msgid "List Groups"
+msgstr "গ্রুপ তালিকা"
+
+msgid "Action Log"
+msgstr "অ্যাকশন লগ"
+
+msgid "Row Level Security"
+msgstr "সারি স্তরের নিরাপত্তা"
+
+msgid "Data"
+msgstr "ডাটা"
+
+msgid "Database Connections"
+msgstr "ডেটাবেস কানেকশন"
+
+msgid "Manage"
+msgstr "ম্যানেজ"
+
+msgid "CSS Templates"
+msgstr "CSS টেমপ্লেট"
+
+msgid "Themes"
+msgstr "থিম"
+
+msgid "Annotation Layers"
+msgstr "টীকা স্তর"
+
+msgid "SQL Editor"
+msgstr "SQL এডিটর"
+
+msgid "Query Search"
+msgstr "কুয়েরি সার্চ"
+
+msgid "Superset Admin"
+msgstr "সুপারসেট অ্যাডমিন"
+
+msgid "Development"
+msgstr "ডেভেলপমেন্ট"
+
+msgid "All"
+msgstr "সকল"
+
+msgid "English"
+msgstr "ইংরেজি"
+
+msgid "Bangla"
+msgstr "বাংলা"
+
+msgid "Report a bug"
+msgstr "বাগ রিপোর্ট করুন"
+
+msgid "Documentation"
+msgstr "ডকুমেন্টেশন"
+
+msgid "Version"
+msgstr "সংস্করণ"
+
+msgid "User"
+msgstr "ব্যবহারকারী"
+
+msgid "Information"
+msgstr "তথ্য"
+
+msgid "Logout"
+msgstr "লগআউট"
+
+msgid "About"
+msgstr "সম্পর্কে"
+
+msgid "Dashboard"
+msgstr "ড্যাশবোর্ড"
+
+msgid "Chart"
+msgstr "চার্ট"

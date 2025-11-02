@@ -34,6 +34,8 @@ x-superset-volumes: &superset-volumes
   - superset_home:/app/superset_home
   - ./tests:/app/tests
   - superset_data:/app/data
+  # Mount project-level Superset config
+  - ./superset_config.py:/app/superset_config.py:ro
 x-common-build: &common-build
   context: .
   target: ${SUPERSET_BUILD_TARGET:-dev} # can use `dev` (default) or `lean`
@@ -111,6 +113,7 @@ services:
         condition: service_completed_successfully
     volumes: *superset-volumes
     environment:
+      SUPERSET_CONFIG_PATH: "/app/superset_config.py"
       SUPERSET__SQLALCHEMY_EXAMPLES_URI: "duckdb:////app/data/examples.duckdb"
 
   superset-websocket:
@@ -164,6 +167,7 @@ services:
     user: *superset-user
     volumes: *superset-volumes
     environment:
+      SUPERSET_CONFIG_PATH: "/app/superset_config.py"
       SUPERSET__SQLALCHEMY_EXAMPLES_URI: "duckdb:////app/data/examples.duckdb"
     healthcheck:
       disable: true
@@ -209,6 +213,7 @@ services:
         required: false
     environment:
       CELERYD_CONCURRENCY: 2
+      SUPERSET_CONFIG_PATH: "/app/superset_config.py"
     restart: unless-stopped
     depends_on:
       superset-init:
@@ -238,6 +243,8 @@ services:
       - superset-worker
     user: *superset-user
     volumes: *superset-volumes
+    environment:
+      SUPERSET_CONFIG_PATH: "/app/superset_config.py"
     healthcheck:
       disable: true
 
@@ -260,6 +267,7 @@ services:
       REDIS_RESULTS_DB: 3
       REDIS_HOST: localhost
       CELERYD_CONCURRENCY: 8
+      SUPERSET_CONFIG_PATH: "/app/superset_config.py"
     network_mode: host
     depends_on:
       superset-init:
