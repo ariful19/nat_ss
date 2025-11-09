@@ -56,6 +56,7 @@ export type FetchTablesQueryParams = {
   forceRefresh?: boolean;
   onSuccess?: (data: Data, isRefetched: boolean) => void;
   onError?: (error: Response) => void;
+  validateSchema?: boolean;
 };
 
 export type FetchTableMetadataQueryParams = {
@@ -165,20 +166,28 @@ export const {
 } = tableApi;
 
 export function useTables(options: Params) {
-  const { dbId, catalog, schema, onSuccess, onError } = options || {};
-  const isMountedRef = useRef(false);
-  const { currentData: schemaOptions, isFetching } = useSchemas({
+  const {
     dbId,
-    catalog: catalog || undefined,
+    catalog,
+    schema,
+    onSuccess,
+    onError,
+    validateSchema = true,
+  } = options || {};
+  const isMountedRef = useRef(false);
+  const shouldValidateSchema = validateSchema && Boolean(dbId);
+  const { currentData: schemaOptions, isFetching } = useSchemas({
+    dbId: shouldValidateSchema ? dbId : undefined,
+    catalog: shouldValidateSchema ? catalog || undefined : undefined,
   });
   const schemaOptionsMap = useMemo(
     () => new Set(schemaOptions?.map(({ value }) => value)),
     [schemaOptions],
   );
 
-  const enabled = Boolean(
-    dbId && schema && !isFetching && schemaOptionsMap.has(schema),
-  );
+  const enabled = validateSchema
+    ? Boolean(dbId && schema && !isFetching && schemaOptionsMap.has(schema))
+    : Boolean(dbId && schema);
 
   const result = useTablesQuery(
     { dbId, catalog, schema, forceRefresh: false },

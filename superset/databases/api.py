@@ -319,6 +319,14 @@ class DatabaseRestApi(BaseSupersetModelRestApi):
         "changed_by": [["id", BaseFilterRelatedUsers, lambda: []]],
     }
 
+    def _get_database_with_dataset_default_fallback(self, pk: int) -> Database | None:
+        """
+        Fetches a database applying the standard base filters, but falls back to the
+        configured dataset creation default database when the requester lacks
+        explicit access yet the database matches the configured default.
+        """
+        return DatabaseDAO.find_by_id_with_dataset_default(pk)
+
     @expose("/<int:pk>/connection", methods=("GET",))
     @protect()
     @safe
@@ -779,7 +787,7 @@ class DatabaseRestApi(BaseSupersetModelRestApi):
             500:
               $ref: '#/components/responses/500'
         """
-        database = self.datamodel.get(pk, self._base_filters)
+        database = self._get_database_with_dataset_default_fallback(pk)
         if not database:
             return self.response_404()
         try:

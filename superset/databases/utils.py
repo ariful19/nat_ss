@@ -19,6 +19,8 @@ from __future__ import annotations
 
 from typing import Any, TYPE_CHECKING
 
+from flask import current_app as app
+
 from sqlalchemy.engine.url import make_url, URL
 
 from superset.commands.database.exceptions import DatabaseInvalidError
@@ -30,6 +32,7 @@ if TYPE_CHECKING:
         TableMetadataForeignKeysIndexesResponse,
         TableMetadataResponse,
     )
+    from superset.models.core import Database
 
 
 def get_foreign_keys_metadata(
@@ -108,6 +111,37 @@ def get_table_metadata(database: Any, table: Table) -> TableMetadataResponse:
         "indexes": keys,
         "comment": table_comment,
     }
+
+
+def matches_dataset_creation_default_database(database: "Database") -> bool:
+    """
+    Returns True when the provided database corresponds to the configured
+    dataset creation default database (by id or case-insensitive name).
+    """
+    configured_value = app.config.get("DATASET_CREATION_DEFAULT_DBID")
+    if configured_value is None:
+        return False
+
+    if isinstance(configured_value, str):
+        value = configured_value.strip()
+        if not value:
+            return False
+        if value.isdigit():
+            configured_value = int(value)
+        else:
+            return database.database_name.lower() == value.lower()
+
+    if isinstance(configured_value, int):
+        return database.id == configured_value
+
+    return False
+
+
+def matches_dataset_creation_default_schema(schema: str | None) -> bool:
+    configured_schema = app.config.get("DATASET_CREATION_DEFAULT_SCHEMA")
+    if not configured_schema or not schema:
+        return False
+    return schema.lower() == configured_schema.lower()
 
 
 def make_url_safe(raw_url: str | URL) -> URL:

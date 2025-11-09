@@ -239,13 +239,14 @@ export function DatabaseSelector({
     }
   }
 
+  const shouldLoadSchemas = !dbSchemaReadOnly;
   const {
     currentData: schemaData,
     isFetching: loadingSchemas,
     refetch: refetchSchemas,
   } = useSchemas({
-    dbId: currentDb?.value,
-    catalog: currentCatalog?.value,
+    dbId: shouldLoadSchemas ? currentDb?.value : undefined,
+    catalog: shouldLoadSchemas ? currentCatalog?.value : undefined,
     onSuccess: (schemas, isFetched) => {
       setErrorPayload(null);
       if (schemas.length === 1) {
@@ -376,7 +377,7 @@ export function DatabaseSelector({
   }
 
   function renderCatalogSelect() {
-    const refreshIcon = !readOnly && (
+    const refreshIcon = !readOnly && !dbSchemaReadOnly && (
       <RefreshLabel
         onClick={refetchCatalogs}
         tooltipContent={t('Force refresh catalog list')}
@@ -403,7 +404,7 @@ export function DatabaseSelector({
   }
 
   function renderSchemaSelect() {
-    const refreshIcon = !readOnly && (
+    const refreshIcon = !readOnly && !dbSchemaReadOnly && (
       <RefreshLabel
         onClick={refetchSchemas}
         tooltipContent={t('Force refresh schema list')}

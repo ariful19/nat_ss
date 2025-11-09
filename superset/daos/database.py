@@ -22,6 +22,7 @@ from typing import Any
 from superset.connectors.sqla.models import SqlaTable
 from superset.daos.base import BaseDAO
 from superset.databases.filters import DatabaseFilter
+from superset.databases.utils import matches_dataset_creation_default_database
 from superset.databases.ssh_tunnel.models import SSHTunnel
 from superset.extensions import db
 from superset.models.core import Database, DatabaseUserOAuth2Tokens
@@ -36,6 +37,26 @@ logger = logging.getLogger(__name__)
 
 class DatabaseDAO(BaseDAO[Database]):
     base_filter = DatabaseFilter
+
+    @classmethod
+    def find_by_id_with_dataset_default(cls, database_id: int) -> Database | None:
+        """
+        Returns a database record using the standard base filters, but when access
+        is denied fallback to the configured dataset creation default database if
+        the requested id matches.
+        """
+        database = cls.find_by_id(database_id)
+        if database:
+            return database
+
+        fallback = (
+            db.session.query(Database)
+            .filter(Database.id == database_id)
+            .one_or_none()
+        )
+        if fallback and matches_dataset_creation_default_database(fallback):
+            return fallback
+        return None
 
     @classmethod
     def update(

@@ -60,6 +60,10 @@ from superset.exceptions import (
     DatasetInvalidPermissionEvaluationException,
     SupersetSecurityException,
 )
+from superset.databases.utils import (
+    matches_dataset_creation_default_database,
+    matches_dataset_creation_default_schema,
+)
 from superset.security.guest_token import (
     GuestToken,
     GuestTokenResources,
@@ -1063,6 +1067,13 @@ class SupersetSecurityManager(  # pylint: disable=too-many-public-methods
             )
             if schema_perm and self.can_access("schema_access", schema_perm):
                 return datasource_names
+
+        if (
+            schema
+            and matches_dataset_creation_default_database(database)
+            and matches_dataset_creation_default_schema(schema)
+        ):
+            return datasource_names
 
         user_perms = self.user_view_menu_names("datasource_access")
         catalog_perms = self.user_view_menu_names("catalog_access")

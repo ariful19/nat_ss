@@ -204,6 +204,7 @@ const TableSelector: FunctionComponent<TableSelectorProps> = ({
     dbId: database?.id,
     catalog: currentCatalog,
     schema: currentSchema,
+    validateSchema: !dbSchemaReadOnly,
     onSuccess: (data, isFetched) => {
       if (isFetched) {
         addSuccessToast(t('List updated'));
