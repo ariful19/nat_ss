@@ -23,6 +23,7 @@ from flask import current_app as app, Response, session
 from flask_appbuilder.api import expose, safe
 from flask_login import current_user
 
+from superset.databases.utils import resolve_dataset_creation_defaults
 from superset.extensions import db
 from superset.models.core import Database
 from superset.views.base_api import BaseSupersetApi
@@ -33,9 +34,9 @@ class OfficesRestApi(BaseSupersetApi):
     Small helper API that surfaces office options (from a configured database)
     so the Dashboard Properties modal can show a multi-select when available.
 
-    Reads configuration keys from superset_config.py:
-      - DATASET_CREATION_DEFAULT_DBID (int id or str database_name)
-      - DATASET_CREATION_DEFAULT_SCHEMA (str schema/database name)
+    Reads domain-aware configuration keys from superset_config.py via
+    resolve_dataset_creation_defaults(), which looks at DOMAIN_DATASET_DEFAULTS
+    (and falls back to DATASET_CREATION_DEFAULT_DBID / _SCHEMA).
 
     Returns 200 with enabled=False if not properly configured or table missing.
     """
@@ -50,12 +51,18 @@ class OfficesRestApi(BaseSupersetApi):
         # Require an authenticated session, but no specific role permission
         if not current_user or current_user.is_anonymous:
             return self.response(401, message="Unauthorized")
-        # Check config presence
-        dbid_or_name: Any = app.config.get("DATASET_CREATION_DEFAULT_DBID")
-        schema: str | None = app.config.get("DATASET_CREATION_DEFAULT_SCHEMA")
-        app.logger.info(f"Fetching office options for DB: {dbid_or_name}, Schema: {schema}")
+        defaults = resolve_dataset_creation_defaults()
+        if not defaults:
+            return self.response(200, result={"enabled": False, "options": []})
+        db_id: int | None = defaults.get("dbId")
+        schema: str | None = defaults.get("schema")
+        app.logger.info(
+            "Fetching office options for resolved dataset defaults dbId=%s schema=%s",
+            db_id,
+            schema,
+        )
 
-        if not dbid_or_name or not schema:
+        if not db_id or not schema:
             # Not configured – do not show selector
             return self.response(200, result={"enabled": False, "options": []})
 
@@ -63,28 +70,14 @@ class OfficesRestApi(BaseSupersetApi):
         database: Database | None = None
         try:
             query = db.session.query(Database)
-            # Accept numeric strings as ids
-            if isinstance(dbid_or_name, int):
-                database = query.filter(Database.id == dbid_or_name).one_or_none()
-            else:
-                value = str(dbid_or_name).strip()
-                if value.isdigit():
-                    database = (
-                        query.filter(Database.id == int(value)).one_or_none()
-                    )
-                if not database and value:
-                    # Case-insensitive match on database_name
-                    database = (
-                        query.filter(sqla.func.lower(Database.database_name) == value.lower())
-                        .one_or_none()
-                    )
+            database = query.filter(Database.id == db_id).one_or_none()
         except Exception as ex:
             app.logger.exception("Error resolving database for offices: %s", ex)
             database = None
 
         if not database:
             app.logger.warning(
-                "OfficesRestApi: Database not found for value '%s'", dbid_or_name
+                "OfficesRestApi: Database not found for id '%s'", db_id
             )
             return self.response(200, result={"enabled": False, "options": []})
 

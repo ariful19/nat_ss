@@ -925,9 +925,10 @@ class Superset(BaseSupersetView):
         Minimal internal endpoint to auto-provision and log in a user, then
         redirect to the welcome page. CSRF should be exempted via config.
 
-        Accepts application/json or form-encoded with fields:
-        userId, username, name, email, mobile, role, officeId, officeName.
-        """
+        Accepts application/json or form-encoded payload with fields:
+        domain, userId, username, name, email, mobile, role / bi_role,
+        role_name / bi_role_name, officeId, officeName, designation.
+    """
         # Lazy imports to avoid circular deps
         from flask import request
         from flask_login import login_user
@@ -947,9 +948,22 @@ class Superset(BaseSupersetView):
         username = (data.get("username") or "").strip()
         name = (data.get("name") or username or "").strip()
         email = (data.get("email") or f"{username}@example.com").strip()
-        role_name = (data.get("role") or "Gamma").strip()
+        raw_role = (
+            data.get("bi_role")
+            or data.get("role")
+            or data.get("role_name")
+            or data.get("bi_role_name")
+            or "Gamma"
+        )
+        role_name = raw_role.strip() or "Gamma"
+        role_display_name = (
+            data.get("bi_role_name")
+            or data.get("role_name")
+            or role_name
+        )
         office_id = data.get("officeId")
         office_name = data.get("officeName") or data.get("office_name")
+        domain = (data.get("domain") or "").strip().lower()
 
         if not username:
             return self.json_response({"error": "username is required"}, status=400)
@@ -1022,6 +1036,15 @@ class Superset(BaseSupersetView):
             session["officeId"] = office_id
         if office_name:
             session["officeName"] = office_name
+        if role_display_name:
+            session["officeRoleName"] = role_display_name
+        if domain:
+            session["userDomain"] = domain
+            session["domain"] = domain
+        if data.get("mobile"):
+            session["mobile"] = data.get("mobile")
+        if data.get("designation"):
+            session["designation"] = data.get("designation")
 
         return redirect(url_for("Superset.welcome"))
 

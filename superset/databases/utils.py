@@ -113,35 +113,208 @@ def get_table_metadata(database: Any, table: Table) -> TableMetadataResponse:
     }
 
 
-def matches_dataset_creation_default_database(database: "Database") -> bool:
-    """
-    Returns True when the provided database corresponds to the configured
-    dataset creation default database (by id or case-insensitive name).
-    """
-    configured_value = app.config.get("DATASET_CREATION_DEFAULT_DBID")
-    if configured_value is None:
-        return False
+def _normalize_domain(domain: str | None) -> str | None:
+    if not domain:
+        return None
+    return domain.strip().lower()
 
-    if isinstance(configured_value, str):
-        value = configured_value.strip()
+
+def get_current_dataset_domain() -> str | None:
+    """
+    Returns the domain associated with the current session/request if available.
+    """
+    domain: str | None = None
+    try:
+        from flask import session
+
+        domain = session.get("userDomain") or session.get("domain")
+    except RuntimeError:
+        domain = None
+
+    if not domain:
+        try:
+            from flask import request
+
+            host = request.host or ""
+            domain = host.split(":")[0] if host else None
+        except RuntimeError:
+            domain = None
+
+    return _normalize_domain(domain)
+
+
+def _get_domain_dataset_config(domain: str | None) -> dict[str, Any] | None:
+    domain = _normalize_domain(domain)
+    configs: dict[str, Any] = app.config.get("DOMAIN_DATASET_DEFAULTS", {})
+    config = None
+
+    if domain and configs:
+        config = configs.get(domain)
+        if not config:
+            # fall back to case-insensitive match without mutating original keys
+            lowered_domain = domain.lower()
+            for key, value in configs.items():
+                if isinstance(key, str) and key.lower() == lowered_domain:
+                    config = value
+                    break
+
+    if config:
+        return dict(config)
+
+    fallback_db = app.config.get("DATASET_CREATION_DEFAULT_DBID")
+    fallback_schema = app.config.get("DATASET_CREATION_DEFAULT_SCHEMA")
+    if fallback_db is None and fallback_schema is None:
+        return None
+
+    return {
+        "database": fallback_db,
+        "schema": fallback_schema,
+    }
+
+
+def _lookup_database_details(identifier: Any) -> tuple[int | None, str | None]:
+    if identifier is None:
+        return None, None
+
+    from superset import db as sqla  # pylint: disable=import-outside-toplevel
+    from superset.models.core import Database  # pylint: disable=import-outside-toplevel
+
+    def _from_id(db_id: int) -> tuple[int | None, str | None]:
+        rec = (
+            sqla.session.query(Database.id, Database.database_name)
+            .filter(Database.id == db_id)
+            .first()
+        )
+        if rec:
+            # rec may be model or tuple depending on dialect
+            resolved_id = rec.id if hasattr(rec, "id") else rec[0]
+            resolved_name = (
+                rec.database_name if hasattr(rec, "database_name") else rec[1]
+            )
+            return resolved_id, resolved_name
+        return None, None
+
+    def _from_name(name: str) -> tuple[int | None, str | None]:
+        rec = (
+            sqla.session.query(Database.id, Database.database_name)
+            .filter(Database.database_name == name)
+            .first()
+        )
+        if rec:
+            resolved_id = rec.id if hasattr(rec, "id") else rec[0]
+            resolved_name = (
+                rec.database_name if hasattr(rec, "database_name") else rec[1]
+            )
+            return resolved_id, resolved_name
+        return None, None
+
+    if isinstance(identifier, dict):
+        db_id = identifier.get("id") or identifier.get("db_id") or identifier.get("dbId")
+        db_name = (
+            identifier.get("name")
+            or identifier.get("database_name")
+            or identifier.get("db_name")
+            or identifier.get("dbName")
+        )
+        if db_id and db_name:
+            return int(db_id), str(db_name)
+        if db_id and not db_name:
+            return _from_id(int(db_id))
+        if db_name and not db_id:
+            return _from_name(str(db_name))
+        return None, None
+
+    if isinstance(identifier, int):
+        return _from_id(identifier)
+
+    if isinstance(identifier, str):
+        value = identifier.strip()
         if not value:
-            return False
+            return None, None
         if value.isdigit():
-            configured_value = int(value)
-        else:
-            return database.database_name.lower() == value.lower()
+            return _from_id(int(value))
+        return _from_name(value)
 
-    if isinstance(configured_value, int):
-        return database.id == configured_value
+    return None, None
 
-    return False
+
+def _compute_dataset_creation_defaults(domain: str | None) -> dict[str, Any] | None:
+    config = _get_domain_dataset_config(domain)
+    if not config:
+        return None
+
+    schema = config.get("schema")
+    db_id = config.get("dbId") or config.get("db_id")
+    db_name = config.get("dbName") or config.get("db_name") or config.get("display_name")
+    db_identifier = (
+        config.get("db")
+        or config.get("database")
+        or config.get("database_name")
+        or config.get("connection")
+    )
+
+    lookup_source: Any | None = db_identifier
+    if lookup_source is None:
+        if db_id and not db_name:
+            lookup_source = db_id
+        elif db_name and not db_id:
+            lookup_source = db_name
+
+    if lookup_source is not None:
+        resolved_id, resolved_name = _lookup_database_details(lookup_source)
+        db_id = db_id or resolved_id
+        db_name = db_name or resolved_name
+
+    result: dict[str, Any] = {}
+    if db_id is not None:
+        result["dbId"] = int(db_id)
+    if db_name:
+        result["dbName"] = str(db_name)
+    if schema:
+        result["schema"] = str(schema)
+
+    return result or None
+
+
+def resolve_dataset_creation_defaults(domain: str | None = None) -> dict[str, Any] | None:
+    """
+    Returns the resolved dataset creation defaults for the provided or current domain,
+    including dbId/dbName/schema when available.
+    """
+    normalized_domain = _normalize_domain(domain) or get_current_dataset_domain()
+    cache_key = normalized_domain or "__default__"
+
+    try:
+        from flask import g
+
+        domain_cache = g.setdefault("_dataset_creation_defaults_cache", {})
+    except RuntimeError:
+        domain_cache = None
+
+    if domain_cache is not None and cache_key in domain_cache:
+        return domain_cache[cache_key]
+
+    resolved = _compute_dataset_creation_defaults(normalized_domain)
+
+    if domain_cache is not None:
+        domain_cache[cache_key] = resolved
+
+    return resolved
+
+
+def matches_dataset_creation_default_database(database: "Database") -> bool:
+    defaults = resolve_dataset_creation_defaults()
+    if not defaults or "dbId" not in defaults:
+        return False
+    return database.id == defaults["dbId"]
 
 
 def matches_dataset_creation_default_schema(schema: str | None) -> bool:
-    configured_schema = app.config.get("DATASET_CREATION_DEFAULT_SCHEMA")
-    if not configured_schema or not schema:
+    defaults = resolve_dataset_creation_defaults()
+    expected_schema = defaults.get("schema") if defaults else None
+    if not expected_schema or not schema:
         return False
-    return schema.lower() == configured_schema.lower()
+    return schema.lower() == expected_schema.lower()
 
 
 def make_url_safe(raw_url: str | URL) -> URL:

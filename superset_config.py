@@ -102,78 +102,58 @@ WTF_CSRF_EXEMPT_LIST = list(_EX) + [
 # --------------------------------------------------------------------
 # Dataset creation defaults (set here, not via env vars).
 #
+# A default database/schema pairing can be configured globally or per-domain.
 # These values are exposed to the frontend bootstrap under
-# `common.dataset_creation_defaults` and used to auto-lock the
-# Database and Schema selectors for non-admin users on the
-# Create Dataset page. Admins keep full access.
+# `common.dataset_creation_defaults` and used to auto-lock the Database
+# and Schema selectors for non-admin users on the Create Dataset page.
+# Admins keep full access.
 #
-# How to configure:
-# - Set both to enable locking for non-admins.
-# - Leave either as None to disable.
-#
-# Example:
-# DATASET_CREATION_DEFAULT_DBID = 1
-# DATASET_CREATION_DEFAULT_SCHEMA = "public"
+# Configure per-domain mappings below. Each entry accepts either a database id,
+# a connection display name, or both. Example:
+# DOMAIN_DATASET_DEFAULTS = {
+#     "example.gov.bd": {"database": "Example Connection", "schema": "demo"},
+#     "dev.example.local": {"database": 5, "schema": "sandbox"},
+# }
+# When no domain match is found, DATASET_CREATION_DEFAULT_DBID /
+# DATASET_CREATION_DEFAULT_SCHEMA are used as the fallback.
 # --------------------------------------------------------------------
 DATASET_CREATION_DEFAULT_DBID: int | None | str = "rms"
 DATASET_CREATION_DEFAULT_SCHEMA: str | None = "report_rms"
 
+DOMAIN_DATASET_DEFAULTS: Dict[str, Dict[str, Any]] = {
+    # Production hosts
+    "report.gov.bd": {
+        "database": "report.gov.bd",
+        "schema": "report_rms",
+    },
+    "fcr.report.gov.bd": {
+        "database": "fcr.report.gov.bd",
+        "schema": "report_fcr",
+    },
+    "stage.report.gov.bd": {
+        "database": "stage.report.gov.bd",
+        "schema": "rms_stage",
+    },
+    "training.report.gov.bd": {
+        "database": "training.report.gov.bd",
+        "schema": "rms_training",
+    },
+    # Local/dev host
+    "report.localhost.com": {
+        "database": "rms",
+        "schema": "report_rms",
+    },
+}
+
 
 def _common_overrides(data: Dict[str, Any]) -> Dict[str, Any]:
-    """Inject dataset creation defaults into bootstrap common payload.
+    """Inject dataset creation defaults into bootstrap common payload."""
+    from superset.databases.utils import resolve_dataset_creation_defaults
 
-    Returns a shallow dict to be merged into `bootstrap_data.common`.
-    """
-    defaults: Dict[str, Any] = {}
-    db_id_value = DATASET_CREATION_DEFAULT_DBID
-    db_name_value = None
-
-    # Resolve database by name if a string was provided
-    try:
-        if isinstance(db_id_value, str) and db_id_value:
-            from superset.models.core import Database  # type: ignore
-            from superset import db as sqla  # type: ignore
-
-            rec = (
-                sqla.session.query(Database.id, Database.database_name)
-                .filter(Database.database_name == db_id_value)
-                .first()
-            )
-            if rec:
-                db_id_value = rec.id if hasattr(rec, "id") else rec[0]
-                db_name_value = (
-                    rec.database_name if hasattr(rec, "database_name") else rec[1]
-                )
-        elif isinstance(db_id_value, int):
-            # Also fetch name for display, if possible
-            from superset.models.core import Database  # type: ignore
-            from superset import db as sqla  # type: ignore
-
-            rec = (
-                sqla.session.query(Database.id, Database.database_name)
-                .filter(Database.id == db_id_value)
-                .first()
-            )
-            if rec:
-                db_name_value = (
-                    rec.database_name if hasattr(rec, "database_name") else rec[1]
-                )
-    except Exception:
-        # Swallow lookup errors; we simply won't provide defaults then
-        pass
-
-    if isinstance(db_id_value, int):
-        defaults["dbId"] = db_id_value
-        if db_name_value:
-            defaults["dbName"] = db_name_value
-    if DATASET_CREATION_DEFAULT_SCHEMA:
-        defaults["schema"] = DATASET_CREATION_DEFAULT_SCHEMA
-
-    # Only add the key when something is configured
+    defaults = resolve_dataset_creation_defaults()
     if defaults:
         return {"dataset_creation_defaults": defaults}
     return {}
 
 
-# Expose the override hook to Superset so the frontend can read defaults.
 COMMON_BOOTSTRAP_OVERRIDES_FUNC = _common_overrides
