@@ -42,6 +42,8 @@ import {
   LocalStorageKeys,
   setItem,
 } from 'src/utils/localStorageHelpers';
+import getBootstrapData from 'src/utils/getBootstrapData';
+import { isUserAdmin } from 'src/dashboard/util/permissionUtils';
 import { noop } from 'lodash';
 import TableElement from '../TableElement';
 
@@ -86,9 +88,40 @@ const SqlEditorLeftBar = ({
     'schema',
   ]);
 
+  const bootstrapData = getBootstrapData();
+  const adminUser = isUserAdmin(bootstrapData.user);
+  const datasetCreationDefaults =
+    ((bootstrapData?.common as any)?.dataset_creation_defaults ||
+      {}) as Partial<{
+      dbId: number;
+      dbName: string;
+      schema: string;
+    }>;
+  const defaultDbId = datasetCreationDefaults?.dbId;
+  const defaultDbName = datasetCreationDefaults?.dbName;
+  const defaultSchema = datasetCreationDefaults?.schema;
+
+  const lockDbSchema = useMemo(
+    () => Boolean(!adminUser && defaultDbId && defaultSchema),
+    [adminUser, defaultDbId, defaultSchema],
+  );
+
+  const lockedDb = useMemo<DatabaseObject | null>(() => {
+    if (!lockDbSchema || !defaultDbId) {
+      return null;
+    }
+    if (database && database.id === defaultDbId) {
+      return database;
+    }
+    return {
+      id: defaultDbId,
+      database_name: defaultDbName || t('Default database'),
+    };
+  }, [lockDbSchema, defaultDbId, defaultDbName, database]);
+
   const [_emptyResultsWithSearch, setEmptyResultsWithSearch] = useState(false);
   const [userSelectedDb, setUserSelected] = useState<DatabaseObject | null>(
-    null,
+    lockDbSchema && lockedDb ? lockedDb : null,
   );
   const { dbId, catalog, schema } = queryEditor;
   const tables = useMemo(
@@ -102,6 +135,17 @@ const SqlEditorLeftBar = ({
   noop(_emptyResultsWithSearch); // This is to avoid unused variable warning, can be removed if not needed
 
   useEffect(() => {
+    if (lockDbSchema && lockedDb) {
+      setUserSelected(lockedDb);
+      if (typeof defaultDbId === 'number' && dbId !== defaultDbId) {
+        dispatch(queryEditorSetDb(queryEditor, defaultDbId));
+      }
+      if (defaultSchema && schema !== defaultSchema) {
+        dispatch(queryEditorSetSchema(queryEditor, defaultSchema));
+      }
+      return;
+    }
+
     const bool = new URLSearchParams(window.location.search).get('db');
     const userSelected = getItem(
       LocalStorageKeys.Database,
@@ -114,7 +158,17 @@ const SqlEditorLeftBar = ({
     } else if (database) {
       setUserSelected(database);
     }
-  }, [database]);
+  }, [
+    database,
+    lockDbSchema,
+    lockedDb,
+    defaultDbId,
+    defaultSchema,
+    dbId,
+    schema,
+    dispatch,
+    queryEditor,
+  ]);
 
   const onEmptyResults = useCallback((searchText?: string) => {
     setEmptyResultsWithSearch(!!searchText);
@@ -214,7 +268,9 @@ const SqlEditorLeftBar = ({
       <TableSelectorMultiple
         onEmptyResults={onEmptyResults}
         emptyState={<EmptyState />}
-        database={userSelectedDb}
+        database={
+          lockDbSchema ? lockedDb || userSelectedDb : userSelectedDb
+        }
         getDbList={handleDbList}
         handleError={handleError}
         onDbChange={onDbChange}
@@ -225,6 +281,8 @@ const SqlEditorLeftBar = ({
         onTableSelectChange={onTablesChange}
         tableValue={selectedTableNames}
         sqlLabMode
+        isDatabaseSelectEnabled={!lockDbSchema}
+        dbSchemaReadOnly={lockDbSchema}
       />
       <div className="divider" />
       <StyledScrollbarContainer>

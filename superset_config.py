@@ -124,11 +124,11 @@ DOMAIN_DATASET_DEFAULTS: Dict[str, Dict[str, Any]] = {
     # Production hosts
     "report.gov.bd": {
         "database": "report.gov.bd",
-        "schema": "report_rms",
+        "schema": "mis_sdf",
     },
     "fcr.report.gov.bd": {
         "database": "fcr.report.gov.bd",
-        "schema": "report_fcr",
+        "schema": "sdf_security",
     },
     "stage.report.gov.bd": {
         "database": "stage.report.gov.bd",

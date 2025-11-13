@@ -36,6 +36,39 @@ import {
 } from 'src/SqlLab/fixtures';
 import type { RootState } from 'src/views/store';
 import type { Store } from 'redux';
+import getBootstrapData from 'src/utils/getBootstrapData';
+
+jest.mock('src/utils/getBootstrapData', () => ({
+  __esModule: true,
+  default: jest.fn(() => ({
+    user: {
+      userId: 1,
+      roles: { Admin: [] },
+    },
+    common: {
+      conf: {
+        SQLLAB_DEFAULT_DBID: 1,
+        DEFAULT_SQLLAB_LIMIT: 1000,
+      },
+    },
+  })),
+}));
+
+const mockGetBootstrapData = getBootstrapData as jest.MockedFunction<
+  typeof getBootstrapData
+>;
+const adminBootstrapData = {
+  user: {
+    userId: 1,
+    roles: { Admin: [] },
+  },
+  common: {
+    conf: {
+      SQLLAB_DEFAULT_DBID: 1,
+      DEFAULT_SQLLAB_LIMIT: 1000,
+    },
+  },
+};
 
 const mockedProps = {
   queryEditorId: defaultQueryEditor.id,
@@ -46,6 +79,10 @@ const mockedProps = {
   },
   height: 0,
 };
+
+beforeEach(() => {
+  mockGetBootstrapData.mockReturnValue(adminBootstrapData as any);
+});
 
 beforeEach(() => {
   fetchMock.get('glob:*/api/v1/database/?*', { result: [] });
@@ -348,4 +385,37 @@ test('ignore schema api when current schema is deprecated', async () => {
   await waitFor(() =>
     expect(screen.queryByText(/None/i)).not.toBeInTheDocument(),
   );
+});
+
+test('locks database and schema selectors for non-admins when defaults exist', async () => {
+  mockGetBootstrapData.mockReturnValue({
+    user: {
+      userId: 2,
+      roles: { Gamma: [] },
+    },
+    common: {
+      dataset_creation_defaults: {
+        dbId: 1,
+        dbName: 'Locked DB',
+        schema: 'locked_schema',
+      },
+      conf: {
+        SQLLAB_DEFAULT_DBID: 1,
+        DEFAULT_SQLLAB_LIMIT: 1000,
+      },
+    },
+  } as any);
+
+  await renderAndWait(mockedProps, undefined, initialState);
+
+  const dbSelect = await screen.findByRole('combobox', {
+    name: 'Select database or type to search databases',
+  });
+  const schemaSelect = screen.getByRole('combobox', {
+    name: 'Select schema or type to search schemas',
+  });
+
+  expect(dbSelect).toHaveAttribute('aria-disabled', 'true');
+  expect(schemaSelect).toHaveAttribute('aria-disabled', 'true');
+  expect(await screen.findByText('locked_schema')).toBeInTheDocument();
 });
