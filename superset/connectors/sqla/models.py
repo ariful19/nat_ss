@@ -691,33 +691,37 @@ class BaseDatasource(AuditMixinNullable, ImportExportMixin):  # pylint: disable=
                     all_filters.append(clause)
 
             # Session-driven office filter (non-admins only)
-            try:
-                from flask import session  # import here to avoid hard dependency
+            if config.get("ENABLE_OFFICE_SESSION_FILTER", False):
+                try:
+                    from flask import session  # import here to avoid hard dependency
 
-                # Skip if admin
-                if not security_manager.is_admin():
-                    office_name = session.get("officeName")
-                    if office_name:
-                        # Find office column by exact or case-insensitive match
-                        target_col_obj = None
-                        for c in self.columns:
-                            if c.column_name == "office_er_nam" or c.column_name.lower() == "office_er_nam":
-                                target_col_obj = c
-                                break
+                    # Skip if admin
+                    if not security_manager.is_admin():
+                        office_name = session.get("officeName")
+                        if office_name:
+                            # Find office column by exact or case-insensitive match
+                            target_col_obj = None
+                            for c in self.columns:
+                                if (
+                                    c.column_name == "office_er_nam"
+                                    or c.column_name.lower() == "office_er_nam"
+                                ):
+                                    target_col_obj = c
+                                    break
 
-                        if target_col_obj is not None:
-                            # Build a safe SQLAlchemy expression: office_er_nam = :literal
-                            col_expr = self.convert_tbl_column_to_sqla_col(
-                                tbl_column=target_col_obj,
-                                template_processor=template_processor,
-                            )
-                            comp = col_expr == sa.literal(office_name)
-                            # Note: returning a binary expression is accepted by
-                            # the downstream query builder (and_(*filters))
-                            all_filters.append(comp)  # type: ignore[arg-type]
-            except Exception:  # pylint: disable=broad-except
-                # Never block queries if session inspection fails
-                pass
+                            if target_col_obj is not None:
+                                # Build a safe SQLAlchemy expression: office_er_nam = :literal
+                                col_expr = self.convert_tbl_column_to_sqla_col(
+                                    tbl_column=target_col_obj,
+                                    template_processor=template_processor,
+                                )
+                                comp = col_expr == sa.literal(office_name)
+                                # Note: returning a binary expression is accepted by
+                                # the downstream query builder (and_(*filters))
+                                all_filters.append(comp)  # type: ignore[arg-type]
+                except Exception:  # pylint: disable=broad-except
+                    # Never block queries if session inspection fails
+                    pass
 
             # Merge grouped filters (OR within group, AND across groups)
             grouped_filters = [or_(*clauses) for clauses in filter_groups.values()]
