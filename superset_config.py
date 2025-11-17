@@ -68,9 +68,14 @@ CORS_OPTIONS = {
         "https://tile.openstreetmap.org",
         "https://tile.osm.ch",
         "http://127.0.0.1:8082",
-    "http://127.0.0.1:8080",
-    "http://localhost:8080",
-    "http://localhost:8000",
+        "http://127.0.0.1:8080",
+        "http://localhost:8080",
+        "http://localhost:8000",
+        "http://report.localhost.com"
+        "https://training.report.gov.bd",
+	"https://report.gov.bd",
+	"https://stage.report.gov.bd",
+	"https://fcr.report.gov.bd",
     ],
     "supports_credentials": True,
 }
