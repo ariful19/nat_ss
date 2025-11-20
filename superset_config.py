@@ -71,7 +71,7 @@ CORS_OPTIONS = {
         "http://127.0.0.1:8080",
         "http://localhost:8080",
         "http://localhost:8000",
-        "http://report.localhost.com"
+        "http://report.localhost.com",
         "https://training.report.gov.bd",
 	"https://report.gov.bd",
 	"https://stage.report.gov.bd",
@@ -86,7 +86,7 @@ SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_SAMESITE = "None"  # allow cross-site iframes
 SESSION_SERVER_SIDE = False
 CSRF_COOKIE_SAMESITE = "None"
-CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = False
 
 # For local HTTP testing you can export SUPERSET_DEV_INSECURE_COOKIES=1
 if os.getenv("SUPERSET_DEV_INSECURE_COOKIES") == "1":
