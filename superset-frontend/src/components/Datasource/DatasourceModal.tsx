@@ -77,6 +77,18 @@ const StyledDatasourceModal = styled(Modal)`
 function buildExtraJsonObject(
   item: DatasetObject['metrics'][0] | DatasetObject['columns'][0],
 ) {
+  let existing: Record<string, any> = {};
+  if (item?.extra) {
+    try {
+      existing =
+        typeof item.extra === 'string'
+          ? JSON.parse(item.extra || '{}')
+          : (item.extra as Record<string, any>);
+    } catch (error) {
+      existing = {};
+    }
+  }
+
   const certification =
     item?.certified_by || item?.certification_details
       ? {
@@ -84,10 +96,24 @@ function buildExtraJsonObject(
           details: item?.certification_details,
         }
       : undefined;
-  return JSON.stringify({
+  const verboseNameI18n = item?.verbose_name_i18n || {};
+  const merged = {
+    ...existing,
     certification,
     warning_markdown: item?.warning_markdown,
-  });
+  };
+  if (!certification) {
+    delete merged.certification;
+  }
+  if (!item?.warning_markdown) {
+    delete merged.warning_markdown;
+  }
+  if (verboseNameI18n && Object.keys(verboseNameI18n).length > 0) {
+    merged.verbose_name_i18n = verboseNameI18n;
+  } else {
+    delete merged.verbose_name_i18n;
+  }
+  return JSON.stringify(merged);
 }
 
 const DatasourceModal: FunctionComponent<DatasourceModalProps> = ({
@@ -115,6 +141,24 @@ const DatasourceModal: FunctionComponent<DatasourceModalProps> = ({
   const dialog = useRef<any>(null);
   const [modal, contextHolder] = Modal.useModal();
   const buildPayload = (datasource: Record<string, any>) => {
+    const buildVerboseNameMap = (item: Record<string, any>) => {
+      const map = {
+        ...(item.verbose_name_i18n || {}),
+      };
+      if (item.verbose_name_i18n_en) {
+        map.en = item.verbose_name_i18n_en;
+      }
+      if (item.verbose_name_i18n_bn) {
+        map.bn = item.verbose_name_i18n_bn;
+      }
+      Object.keys(map).forEach(key => {
+        if (!map[key]) {
+          delete map[key];
+        }
+      });
+      return Object.keys(map).length ? map : undefined;
+    };
+
     const payload: Record<string, any> = {
       table_name: datasource.table_name,
       database_id: datasource.database?.id,
@@ -140,6 +184,7 @@ const DatasourceModal: FunctionComponent<DatasourceModalProps> = ({
       external_url: datasource.external_url,
       metrics: datasource?.metrics?.map(
         (metric: DatasetObject['metrics'][0]) => {
+          const verboseMap = buildVerboseNameMap(metric);
           const metricBody: any = {
             expression: metric.expression,
             description: metric.description,
@@ -150,7 +195,11 @@ const DatasourceModal: FunctionComponent<DatasourceModalProps> = ({
             verbose_name: metric.verbose_name,
             warning_text: metric.warning_text,
             uuid: metric.uuid,
-            extra: buildExtraJsonObject(metric),
+            verbose_name_i18n: verboseMap,
+            extra: buildExtraJsonObject({
+              ...metric,
+              verbose_name_i18n: verboseMap,
+            }),
           };
           if (!Number.isNaN(Number(metric.id))) {
             metricBody.id = metric.id;
@@ -159,22 +208,29 @@ const DatasourceModal: FunctionComponent<DatasourceModalProps> = ({
         },
       ),
       columns: datasource?.columns?.map(
-        (column: DatasetObject['columns'][0]) => ({
-          id: typeof column.id === 'number' ? column.id : undefined,
-          column_name: column.column_name,
-          type: column.type,
-          advanced_data_type: column.advanced_data_type,
-          verbose_name: column.verbose_name,
-          description: column.description,
-          expression: column.expression,
-          filterable: column.filterable,
-          groupby: column.groupby,
-          is_active: column.is_active,
-          is_dttm: column.is_dttm,
-          python_date_format: column.python_date_format || null,
-          uuid: column.uuid,
-          extra: buildExtraJsonObject(column),
-        }),
+        (column: DatasetObject['columns'][0]) => {
+          const verboseMap = buildVerboseNameMap(column);
+          return {
+            id: typeof column.id === 'number' ? column.id : undefined,
+            column_name: column.column_name,
+            type: column.type,
+            advanced_data_type: column.advanced_data_type,
+            verbose_name: column.verbose_name,
+            description: column.description,
+            expression: column.expression,
+            filterable: column.filterable,
+            groupby: column.groupby,
+            is_active: column.is_active,
+            is_dttm: column.is_dttm,
+            python_date_format: column.python_date_format || null,
+            uuid: column.uuid,
+            verbose_name_i18n: verboseMap,
+            extra: buildExtraJsonObject({
+              ...column,
+              verbose_name_i18n: verboseMap,
+            }),
+          };
+        },
       ),
       owners: datasource.owners.map(
         (o: Record<string, number>) => o.value || o.id,

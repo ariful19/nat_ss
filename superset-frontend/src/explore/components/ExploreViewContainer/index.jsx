@@ -66,6 +66,7 @@ import * as exploreActions from 'src/explore/actions/exploreActions';
 import * as saveModalActions from 'src/explore/actions/saveModalActions';
 import { useTabId } from 'src/hooks/useTabId';
 import withToasts from 'src/components/MessageToasts/withToasts';
+import { normalizeI18nMap, resolveI18nLabel } from 'src/utils/i18n';
 import ExploreChartPanel from '../ExploreChartPanel';
 import ConnectedControlPanelsContainer from '../ControlPanelsContainer';
 import SaveModal from '../SaveModal';
@@ -852,6 +853,23 @@ function mapStateToProps(state) {
   }
 
   const patchedFormData = patchBigNumberTotalFormData(form_data, slice);
+  const locale = common?.locale || 'en';
+
+  let titleI18n = normalizeI18nMap(slice?.form_data?.title_i18n);
+  if (!titleI18n && slice?.params) {
+    try {
+      const params = JSON.parse(slice.params);
+      titleI18n = normalizeI18nMap(params?.title_i18n);
+    } catch (error) {
+      logging.warn('Unable to parse slice params for i18n title', error);
+    }
+  }
+
+  const resolvedSliceName = resolveI18nLabel(
+    titleI18n,
+    explore.sliceName ?? slice?.slice_name ?? null,
+    locale,
+  );
 
   return {
     isDatasourceMetaLoading: explore.isDatasourceMetaLoading,
@@ -872,7 +890,7 @@ function mapStateToProps(state) {
       : 'slice-container',
     isStarred: explore.isStarred,
     slice,
-    sliceName: explore.sliceName ?? slice?.slice_name ?? null,
+    sliceName: resolvedSliceName,
     triggerRender: explore.triggerRender,
     form_data: patchedFormData,
     table_name: datasource.table_name,

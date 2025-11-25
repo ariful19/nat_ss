@@ -61,6 +61,7 @@ import {
   Select,
   Typography,
   Label,
+  Switch,
 } from '@superset-ui/core/components';
 import { FilterableTable } from 'src/components';
 import {
@@ -190,6 +191,36 @@ DATASOURCE_TYPES_ARR.forEach(o => {
   DATASOURCE_TYPES[o.key] = o;
 });
 
+const parseVerboseNameI18n = extra => {
+  if (!extra) return {};
+  try {
+    const parsed =
+      typeof extra === 'string' && extra.trim()
+        ? JSON.parse(extra)
+        : extra;
+    const map = parsed?.verbose_name_i18n || parsed?.verboseNameI18n;
+    if (map && typeof map === 'object') {
+      return map;
+    }
+  } catch (error) {
+    // ignore parse errors and fall back to empty
+  }
+  return {};
+};
+
+const hydrateLabelI18n = item => {
+  const verboseNameI18n =
+    item.verbose_name_i18n || parseVerboseNameI18n(item.extra);
+  return {
+    ...item,
+    verbose_name_i18n: verboseNameI18n,
+    verbose_name_i18n_en:
+      item.verbose_name_i18n_en || verboseNameI18n?.en || '',
+    verbose_name_i18n_bn:
+      item.verbose_name_i18n_bn || verboseNameI18n?.bn || '',
+  };
+};
+
 function CollectionTabTitle({ title, collection }) {
   return (
     <div
@@ -218,6 +249,7 @@ function ColumnCollectionTable({
   allowEditDataType,
   itemGenerator,
   columnLabelTooltips,
+  multilingualLabelsEnabled,
 }) {
   return (
     <CollectionTable
@@ -293,6 +325,30 @@ function ColumnCollectionTable({
                 />
               }
             />
+            {multilingualLabelsEnabled && (
+              <>
+                <Field
+                  fieldKey="verbose_name_i18n_en"
+                  label={t('Label (English)')}
+                  control={
+                    <TextControl
+                      controlId="verbose_name_i18n_en"
+                      placeholder={t('English label')}
+                    />
+                  }
+                />
+                <Field
+                  fieldKey="verbose_name_i18n_bn"
+                  label={t('Label (Bangla)')}
+                  control={
+                    <TextControl
+                      controlId="verbose_name_i18n_bn"
+                      placeholder={t('Bangla label')}
+                    />
+                  }
+                />
+              </>
+            )}
             <Field
               fieldKey="description"
               label={t('Description')}
@@ -531,6 +587,7 @@ ColumnCollectionTable.propTypes = {
   allowAddItem: PropTypes.bool,
   allowEditDataType: PropTypes.bool,
   itemGenerator: PropTypes.func,
+  multilingualLabelsEnabled: PropTypes.bool,
 };
 ColumnCollectionTable.defaultProps = {
   editableColumnName: false,
@@ -542,6 +599,7 @@ ColumnCollectionTable.defaultProps = {
     filterable: true,
     groupby: true,
   }),
+  multilingualLabelsEnabled: false,
 };
 
 function StackedField({ label, formElement }) {
@@ -620,6 +678,21 @@ const ResultTable =
 class DatasourceEditor extends PureComponent {
   constructor(props) {
     super(props);
+    const hydratedColumns = props.datasource.columns.map(hydrateLabelI18n);
+    const hasI18nLabels =
+      hydratedColumns.some(
+        col =>
+          col.verbose_name_i18n_en ||
+          col.verbose_name_i18n_bn ||
+          (col.verbose_name_i18n &&
+            Object.keys(col.verbose_name_i18n || {}).length > 0),
+      ) ||
+      props.datasource.metrics?.some(metric =>
+        Boolean(
+          parseVerboseNameI18n(metric.extra).en ||
+            parseVerboseNameI18n(metric.extra).bn,
+        ),
+      );
     this.state = {
       datasource: {
         ...props.datasource,
@@ -635,12 +708,18 @@ class DatasourceEditor extends PureComponent {
           const {
             certification: { details, certified_by: certifiedBy } = {},
             warning_markdown: warningMarkdown,
+            verbose_name_i18n: verboseNameI18n = {},
           } = JSON.parse(metric.extra || '{}') || {};
+          const hydratedVerbose =
+            metric.verbose_name_i18n || verboseNameI18n || {};
           return {
             ...metric,
             certification_details: certificationDetails || details,
             warning_markdown: warningMarkdown || '',
             certified_by: certifiedBy || certifiedByMetric,
+            verbose_name_i18n: hydratedVerbose,
+            verbose_name_i18n_en: hydratedVerbose?.en || '',
+            verbose_name_i18n_bn: hydratedVerbose?.bn || '',
           };
         }),
       },
@@ -649,15 +728,18 @@ class DatasourceEditor extends PureComponent {
         props.datasource.datasource_type === 'table' ||
         props.datasource.type === 'table',
       isEditMode: false,
-      databaseColumns: props.datasource.columns.filter(col => !col.expression),
-      calculatedColumns: props.datasource.columns.filter(
-        col => !!col.expression,
-      ),
+      databaseColumns: hydratedColumns
+        .filter(col => !col.expression)
+        .map(hydrateLabelI18n),
+      calculatedColumns: hydratedColumns
+        .filter(col => !!col.expression)
+        .map(hydrateLabelI18n),
       metadataLoading: false,
       activeTabKey: TABS_KEYS.SOURCE,
       datasourceType: props.datasource.sql
         ? DATASOURCE_TYPES.virtual.key
         : DATASOURCE_TYPES.physical.key,
+      multilingualLabelsEnabled: hasI18nLabels,
     };
 
     this.onChange = this.onChange.bind(this);
@@ -677,6 +759,8 @@ class DatasourceEditor extends PureComponent {
         symbol: currencyCode,
       })} (${currencyCode})`,
     }));
+    this.toggleMultilingualLabels =
+      this.toggleMultilingualLabels.bind(this);
   }
 
   onChange() {
@@ -697,6 +781,10 @@ class DatasourceEditor extends PureComponent {
   onChangeEditMode() {
     this.props.setIsEditing(!this.state.isEditMode);
     this.setState(prevState => ({ isEditMode: !prevState.isEditMode }));
+  }
+
+  toggleMultilingualLabels(checked) {
+    this.setState({ multilingualLabelsEnabled: checked });
   }
 
   onDatasourceChange(datasource, callback = this.validateAndChange) {
@@ -724,7 +812,16 @@ class DatasourceEditor extends PureComponent {
 
   setColumns(obj) {
     // update calculatedColumns or databaseColumns
-    this.setState(obj, this.validateAndChange);
+    const normalized = {};
+    if (obj.databaseColumns) {
+      normalized.databaseColumns = obj.databaseColumns.map(hydrateLabelI18n);
+    }
+    if (obj.calculatedColumns) {
+      normalized.calculatedColumns = obj.calculatedColumns.map(
+        hydrateLabelI18n,
+      );
+    }
+    this.setState(normalized, this.validateAndChange);
   }
 
   validateAndChange() {
@@ -1501,18 +1598,42 @@ class DatasourceEditor extends PureComponent {
                   />
                 }
               />
-              <Field
-                fieldKey="d3format"
-                label={t('D3 format')}
-                control={
-                  <TextControl controlId="d3format" placeholder="%y/%m/%d" />
-                }
-              />
-              <Field
-                fieldKey="currency"
-                label={t('Metric currency')}
-                control={
-                  <CurrencyControl
+            <Field
+              fieldKey="d3format"
+              label={t('D3 format')}
+              control={
+                <TextControl controlId="d3format" placeholder="%y/%m/%d" />
+              }
+            />
+            {this.state.multilingualLabelsEnabled && (
+              <>
+                <Field
+                  fieldKey="verbose_name_i18n_en"
+                  label={t('Label (English)')}
+                  control={
+                    <TextControl
+                      controlId="verbose_name_i18n_en"
+                      placeholder={t('English label')}
+                    />
+                  }
+                />
+                <Field
+                  fieldKey="verbose_name_i18n_bn"
+                  label={t('Label (Bangla)')}
+                  control={
+                    <TextControl
+                      controlId="verbose_name_i18n_bn"
+                      placeholder={t('Bangla label')}
+                    />
+                  }
+                />
+              </>
+            )}
+            <Field
+              fieldKey="currency"
+              label={t('Metric currency')}
+              control={
+                <CurrencyControl
                     currencySelectOverrideProps={{
                       placeholder: t('Select or type currency symbol'),
                     }}
@@ -1569,6 +1690,8 @@ class DatasourceEditor extends PureComponent {
           metric_name: t('<new metric>'),
           verbose_name: '',
           expression: '',
+          verbose_name_i18n_en: '',
+          verbose_name_i18n_bn: '',
         })}
         itemCellProps={{
           expression: () => ({
@@ -1698,6 +1821,16 @@ class DatasourceEditor extends PureComponent {
                         {t('Sync columns from source')}
                       </Button>
                     </StyledButtonWrapper>
+                    <StyledButtonWrapper>
+                      <Switch
+                        checked={this.state.multilingualLabelsEnabled}
+                        onChange={this.toggleMultilingualLabels}
+                        aria-label={t('Enable multilingual labels')}
+                      />
+                      <span css={{ marginLeft: 8 }}>
+                        {t('Enable multilingual labels')}
+                      </span>
+                    </StyledButtonWrapper>
                   </ColumnButtonWrapper>
                   <ColumnCollectionTable
                     className="columns-table"
@@ -1707,6 +1840,7 @@ class DatasourceEditor extends PureComponent {
                       this.setColumns({ databaseColumns })
                     }
                     onDatasourceChange={this.onDatasourceChange}
+                    multilingualLabelsEnabled={this.state.multilingualLabelsEnabled}
                   />
                   {this.state.metadataLoading && <Loading />}
                 </StyledColumnsTabWrapper>
@@ -1746,7 +1880,10 @@ class DatasourceEditor extends PureComponent {
                       groupby: true,
                       expression: t('<enter SQL expression here>'),
                       expanded: true,
+                      verbose_name_i18n_en: '',
+                      verbose_name_i18n_bn: '',
                     })}
+                    multilingualLabelsEnabled={this.state.multilingualLabelsEnabled}
                   />
                 </StyledColumnsTabWrapper>
               ),

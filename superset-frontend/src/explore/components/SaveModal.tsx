@@ -74,6 +74,8 @@ type SaveModalState = {
   isLoading: boolean;
   saveStatus?: string | null;
   dashboard?: { label: string; value: string | number };
+  titleI18nEnabled: boolean;
+  titleI18n: Record<string, string>;
 };
 
 export const StyledModal = styled(Modal)`
@@ -90,12 +92,18 @@ export const StyledModal = styled(Modal)`
 class SaveModal extends Component<SaveModalProps, SaveModalState> {
   constructor(props: SaveModalProps) {
     super(props);
+    const initialTitleI18n =
+      (props.form_data?.title_i18n as Record<string, string>) ||
+      (props.slice?.form_data?.title_i18n as Record<string, string>) ||
+      {};
     this.state = {
       newSliceName: props.sliceName,
       datasetName: props.datasource?.name,
       action: this.canOverwriteSlice() ? 'overwrite' : 'saveas',
       isLoading: false,
       dashboard: undefined,
+      titleI18nEnabled: Object.keys(initialTitleI18n).length > 0,
+      titleI18n: initialTitleI18n,
     };
     this.onDashboardChange = this.onDashboardChange.bind(this);
     this.onSliceNameChange = this.onSliceNameChange.bind(this);
@@ -161,6 +169,16 @@ class SaveModal extends Component<SaveModalProps, SaveModalState> {
   changeAction(action: SaveActionType) {
     this.setState({ action });
   }
+
+  onToggleTitleI18n = (enabled: boolean) => {
+    this.setState({ titleI18nEnabled: enabled });
+  };
+
+  onTitleI18nChange = (locale: string, value: string) => {
+    this.setState(prev => ({
+      titleI18n: { ...prev.titleI18n, [locale]: value },
+    }));
+  };
 
   onHide() {
     this.props.dispatch(setSaveChartModalVisibility(false));
@@ -238,6 +256,14 @@ class SaveModal extends Component<SaveModalProps, SaveModalState> {
       }
 
       // Sets the form data
+      const titleI18n = this.state.titleI18nEnabled
+        ? this.state.titleI18n
+        : undefined;
+      if (titleI18n) {
+        formData.title_i18n = titleI18n;
+      } else {
+        delete formData.title_i18n;
+      }
       this.props.actions.setFormData({ ...formData });
 
       //  Update or create slice
@@ -253,6 +279,7 @@ class SaveModal extends Component<SaveModalProps, SaveModalState> {
                 new: this.isNewDashboard(),
               }
             : null,
+          titleI18n,
         );
       } else {
         value = await this.props.actions.createSlice(
@@ -264,6 +291,7 @@ class SaveModal extends Component<SaveModalProps, SaveModalState> {
                 new: this.isNewDashboard(),
               }
             : null,
+          titleI18n,
         );
       }
 
@@ -369,6 +397,42 @@ class SaveModal extends Component<SaveModalProps, SaveModalState> {
             data-test="new-chart-name"
           />
         </FormItem>
+        <FormItem>
+          <Radio
+            checked={this.state.titleI18nEnabled}
+            onChange={() =>
+              this.onToggleTitleI18n(!this.state.titleI18nEnabled)
+            }
+          >
+            {t('Enable multilingual title inputs (en/bn)')}
+          </Radio>
+        </FormItem>
+        {this.state.titleI18nEnabled && (
+          <>
+            <FormItem label={t('Title (English)')}>
+              <Input
+                name="title_i18n_en"
+                type="text"
+                placeholder={t('English title')}
+                value={this.state.titleI18n.en || ''}
+                onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                  this.onTitleI18nChange('en', event.target.value)
+                }
+              />
+            </FormItem>
+            <FormItem label={t('Title (Bangla)')}>
+              <Input
+                name="title_i18n_bn"
+                type="text"
+                placeholder={t('Bangla title')}
+                value={this.state.titleI18n.bn || ''}
+                onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                  this.onTitleI18nChange('bn', event.target.value)
+                }
+              />
+            </FormItem>
+          </>
+        )}
         {this.props.datasource?.type === 'query' && (
           <FormItem label={t('Dataset Name')} required>
             <InfoTooltip

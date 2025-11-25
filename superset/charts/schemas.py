@@ -22,13 +22,21 @@ from typing import Any, TYPE_CHECKING
 
 from flask import current_app
 from flask_babel import gettext as _
-from marshmallow import EXCLUDE, fields, post_load, Schema, validate
+from marshmallow import (
+    EXCLUDE,
+    fields,
+    post_load,
+    Schema,
+    validate,
+    ValidationError,
+    validates_schema,
+)
 from marshmallow.validate import Length, Range
 
 from superset.common.chart_data import ChartDataResultFormat, ChartDataResultType
 from superset.db_engine_specs.base import builtin_time_grains
 from superset.tags.models import TagType
-from superset.utils import pandas_postprocessing, schema as utils
+from superset.utils import json, pandas_postprocessing, schema as utils
 from superset.utils.core import (
     AnnotationType,
     DatasourceType,
@@ -36,6 +44,7 @@ from superset.utils.core import (
     PostProcessingBoxplotWhiskerType,
     PostProcessingContributionOrientation,
 )
+from superset.utils.i18n import normalize_i18n_dict
 
 if TYPE_CHECKING:
     from superset.common.query_context import QueryContext
@@ -59,6 +68,29 @@ def get_time_grain_choices() -> Any:
         }.keys()
         if i
     ]
+
+
+def validate_title_i18n(params: Any) -> None:
+    """
+    Validate that params.title_i18n is a mapping of locale -> string when present.
+    """
+
+    if not params:
+        return
+
+    try:
+        parsed_params = json.loads(params) if isinstance(params, str) else params
+    except Exception as ex:  # pylint: disable=broad-except
+        raise ValidationError(_("Params must be valid JSON"), field_name="params") from ex
+
+    if not isinstance(parsed_params, dict):
+        raise ValidationError(_("Params payload must be a JSON object"), field_name="params")
+
+    if parsed_params.get("title_i18n") is not None:
+        try:
+            normalize_i18n_dict(parsed_params["title_i18n"])
+        except ValueError as ex:
+            raise ValidationError([str(ex)], field_name="params") from ex
 
 
 #
@@ -244,6 +276,11 @@ class ChartPostSchema(Schema):
     external_url = fields.String(allow_none=True)
     uuid = fields.UUID(allow_none=True)
 
+    @validates_schema
+    # pylint: disable=unused-argument
+    def validate_i18n(self, data: dict[str, Any], **kwargs: Any) -> None:
+        validate_title_i18n(data.get("params"))
+
 
 class ChartPutSchema(Schema):
     """
@@ -300,6 +337,11 @@ class ChartPutSchema(Schema):
     external_url = fields.String(allow_none=True)
     tags = fields.List(fields.Integer(metadata={"description": tags_description}))
     uuid = fields.UUID(allow_none=True)
+
+    @validates_schema
+    # pylint: disable=unused-argument
+    def validate_i18n(self, data: dict[str, Any], **kwargs: Any) -> None:
+        validate_title_i18n(data.get("params"))
 
 
 class ChartGetDatasourceObjectDataResponseSchema(Schema):

@@ -16,10 +16,15 @@
 # under the License.
 
 # pylint: disable=import-outside-toplevel, invalid-name, unused-argument, redefined-outer-name
+from typing import Any
+
 import pytest
 from marshmallow import ValidationError
 
-from superset.datasets.schemas import validate_python_date_format
+from superset.datasets.schemas import (
+    validate_python_date_format,
+    validate_verbose_name_i18n,
+)
 
 
 # pylint: disable=too-few-public-methods
@@ -46,3 +51,24 @@ def test_validate_python_date_format(payload) -> None:
 def test_validate_python_date_format_raises(payload) -> None:
     with pytest.raises(ValidationError):
         validate_python_date_format(payload)
+
+
+def test_validate_verbose_name_i18n_accepts_mapping() -> None:
+    validate_verbose_name_i18n({"verbose_name_i18n": {"en": "Revenue", "bn": "রাজস্ব"}})
+
+
+def test_validate_verbose_name_i18n_accepts_string_json() -> None:
+    validate_verbose_name_i18n('{"verbose_name_i18n": {"en": "Sales"}}')
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"verbose_name_i18n": {"en": 1}},
+        "not-json",
+        ["bad"],
+    ],
+)
+def test_validate_verbose_name_i18n_rejects(payload: Any) -> None:
+    with pytest.raises(ValidationError):
+        validate_verbose_name_i18n(payload)

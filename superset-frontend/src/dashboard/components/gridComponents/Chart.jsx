@@ -59,6 +59,7 @@ import {
 } from '../../util/activeDashboardFilters';
 import getFormDataWithExtraFilters from '../../util/charts/getFormDataWithExtraFilters';
 import { PLACEHOLDER_DATASOURCE } from '../../constants';
+import { resolveI18nLabel, normalizeI18nMap } from 'src/utils/i18n';
 
 const propTypes = {
   id: PropTypes.number.isRequired,
@@ -165,6 +166,22 @@ const Chart = props => {
       PLACEHOLDER_DATASOURCE,
   );
   const dashboardInfo = useSelector(state => state.dashboardInfo);
+  const locale = dashboardInfo?.common?.locale || 'en';
+
+  let titleI18n =
+    normalizeI18nMap(slice?.form_data?.title_i18n) || undefined;
+  if (!titleI18n && slice?.params) {
+    try {
+      const parsed = JSON.parse(slice.params);
+      titleI18n = normalizeI18nMap(parsed?.title_i18n) || undefined;
+    } catch (error) {
+      logging.warn('Unable to parse chart params for i18n title', error);
+    }
+  }
+
+  const displaySliceName =
+    resolveI18nLabel(titleI18n, props.sliceName || slice.slice_name, locale) ||
+    slice.slice_name;
 
   const isCached = useMemo(
     // eslint-disable-next-line camelcase
@@ -446,7 +463,7 @@ const Chart = props => {
       data-test="chart-grid-component"
       data-test-chart-id={props.id}
       data-test-viz-type={slice.viz_type}
-      data-test-chart-name={slice.slice_name}
+      data-test-chart-name={displaySliceName}
     >
       <SliceHeader
         ref={headerRef}
@@ -468,7 +485,7 @@ const Chart = props => {
         exportFullCSV={exportFullCSV}
         exportFullXLSX={exportFullXLSX}
         updateSliceName={props.updateSliceName}
-        sliceName={props.sliceName}
+        sliceName={displaySliceName}
         supersetCanExplore={supersetCanExplore}
         supersetCanShare={supersetCanShare}
         supersetCanCSV={supersetCanCSV}

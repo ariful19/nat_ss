@@ -26,6 +26,7 @@ import {
   CollapseLabelInModal,
   type SelectValue,
 } from '@superset-ui/core/components';
+import { Switch } from '@superset-ui/core/components/Switch';
 import rison from 'rison';
 import {
   t,
@@ -80,6 +81,22 @@ function PropertiesModal({
     null,
   );
   const [tags, setTags] = useState<TagType[]>([]);
+  const initialTitleI18n =
+    (slice as any)?.form_data?.title_i18n ||
+    (() => {
+      try {
+        return slice.params ? JSON.parse(slice.params).title_i18n : undefined;
+      } catch (error) {
+        return undefined;
+      }
+    })() ||
+    {};
+  const [titleI18nEnabled, setTitleI18nEnabled] = useState(
+    Object.keys(initialTitleI18n).length > 0,
+  );
+  const [titleI18n, setTitleI18n] = useState<Record<string, string>>(
+    initialTitleI18n,
+  );
 
   // Validation setup
   const modalSections = useMemo(
@@ -233,6 +250,27 @@ function PropertiesModal({
     }
 
     try {
+      const paramsPayload = slice.params ? JSON.parse(slice.params) : {};
+      if (titleI18nEnabled) {
+        const cleanTitleMap = Object.fromEntries(
+          Object.entries(titleI18n || {}).filter(
+            ([, value]) => value && value.trim().length > 0,
+          ),
+        );
+        if (Object.keys(cleanTitleMap).length > 0) {
+          paramsPayload.title_i18n = cleanTitleMap;
+        } else {
+          delete paramsPayload.title_i18n;
+        }
+      } else {
+        delete paramsPayload.title_i18n;
+      }
+      payload.params = JSON.stringify(paramsPayload);
+    } catch (error) {
+      // keep params untouched if parsing fails
+    }
+
+    try {
       const res = await SupersetClient.put({
         endpoint: `/api/v1/chart/${slice.slice_id}`,
         headers: { 'Content-Type': 'application/json' },
@@ -266,6 +304,18 @@ function PropertiesModal({
   // update name after it's changed in another modal
   useEffect(() => {
     setName(slice.slice_name || '');
+    const parsedTitleI18n =
+      (slice as any)?.form_data?.title_i18n ||
+      (() => {
+        try {
+          return slice.params ? JSON.parse(slice.params).title_i18n : {};
+        } catch (error) {
+          return {};
+        }
+      })() ||
+      {};
+    setTitleI18n(parsedTitleI18n);
+    setTitleI18nEnabled(Object.keys(parsedTitleI18n).length > 0);
   }, [slice.slice_name]);
 
   // Validate general section when name changes
@@ -346,6 +396,45 @@ function PropertiesModal({
                     }
                   />
                 </ModalFormField>
+                <ModalFormField
+                  label={t('Enable multilingual titles (en/bn)')}
+                  helperText={t(
+                    'Add localized chart titles. English is used as a fallback.',
+                  )}
+                >
+                  <Switch
+                    checked={titleI18nEnabled}
+                    onChange={checked => setTitleI18nEnabled(checked)}
+                  />
+                </ModalFormField>
+                {titleI18nEnabled && (
+                  <>
+                    <ModalFormField label={t('Title (English)')}>
+                      <Input
+                        aria-label={t('Title (English)')}
+                        value={titleI18n.en || ''}
+                        onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                          setTitleI18n({
+                            ...titleI18n,
+                            en: event.target.value ?? '',
+                          })
+                        }
+                      />
+                    </ModalFormField>
+                    <ModalFormField label={t('Title (Bangla)')}>
+                      <Input
+                        aria-label={t('Title (Bangla)')}
+                        value={titleI18n.bn || ''}
+                        onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                          setTitleI18n({
+                            ...titleI18n,
+                            bn: event.target.value ?? '',
+                          })
+                        }
+                      />
+                    </ModalFormField>
+                  </>
+                )}
                 <ModalFormField
                   label={t('Description')}
                   helperText={t(

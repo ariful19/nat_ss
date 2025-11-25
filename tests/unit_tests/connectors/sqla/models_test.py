@@ -15,14 +15,18 @@
 # specific language governing permissions and limitations
 # under the License.
 
+import json
+
 import pandas as pd
 import pytest
+from flask import current_app
+from flask_babel import force_locale
 from pytest_mock import MockerFixture
 from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.session import Session
 
-from superset.connectors.sqla.models import SqlaTable, TableColumn
+from superset.connectors.sqla.models import SqlaTable, SqlMetric, TableColumn
 from superset.daos.dataset import DatasetDAO
 from superset.exceptions import OAuth2RedirectError
 from superset.models.core import Database
@@ -696,3 +700,38 @@ def test_get_sqla_table_with_catalog(
     # Verify expected table name and schema
     assert sqla_table.name == expected_name
     assert sqla_table.schema == expected_schema
+
+
+def test_verbose_map_prefers_i18n_labels() -> None:
+    database = Database(database_name="my_db")
+    table = SqlaTable(
+        table_name="sales",
+        columns=[
+            TableColumn(
+                column_name="revenue",
+                verbose_name=None,
+                extra=json.dumps(
+                    {"verbose_name_i18n": {"en": "Revenue", "bn": "রাজস্ব"}}
+                ),
+            )
+        ],
+        metrics=[
+            SqlMetric(
+                metric_name="total",
+                verbose_name=None,
+                expression="SUM(revenue)",
+                extra=json.dumps(
+                    {"verbose_name_i18n": {"en": "Total", "bn": "মোট"}}
+                ),
+            )
+        ],
+        database=database,
+    )
+
+    with current_app.test_request_context("/"):
+        with force_locale("bn"):
+            assert table.verbose_map["revenue"] == "রাজস্ব"
+            assert table.verbose_map["total"] == "মোট"
+
+        with force_locale("fr"):
+            assert table.verbose_map["revenue"] == "Revenue"

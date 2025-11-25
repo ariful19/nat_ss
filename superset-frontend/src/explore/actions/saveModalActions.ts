@@ -89,6 +89,7 @@ export const getSlicePayload = async (
   dashboards: number[],
   owners: [],
   formDataFromSlice: QueryFormData = {} as QueryFormData,
+  titleI18n?: Record<string, string>,
 ): Promise<Partial<PayloadSlice>> => {
   const adhocFilters: Partial<QueryFormData> = extractAdhocFiltersFromFormData(
     formDataWithNativeFilters,
@@ -140,10 +141,16 @@ export const getSlicePayload = async (
     });
   }
   const formData = {
+    ...formDataFromSlice,
     ...formDataWithNativeFilters,
     ...adhocFilters,
     dashboards,
   };
+  if (titleI18n) {
+    formData.title_i18n = titleI18n;
+  } else if (formDataFromSlice?.title_i18n && !formData.title_i18n) {
+    formData.title_i18n = formDataFromSlice.title_i18n;
+  }
   let datasourceId = 0;
   let datasourceType: DatasourceType = DatasourceType.Table;
 
@@ -235,6 +242,7 @@ export const updateSlice =
       title: string;
       new?: boolean;
     },
+    titleI18n?: Record<string, string>,
   ) =>
   async (dispatch: Dispatch, getState: () => Partial<QueryFormData>) => {
     const { slice_id: sliceId, owners, form_data: formDataFromSlice } = slice;
@@ -248,6 +256,7 @@ export const updateSlice =
           dashboards,
           owners as [],
           formDataFromSlice,
+          titleI18n,
         ),
       });
 
@@ -268,6 +277,7 @@ export const createSlice =
       title: string;
       new?: boolean;
     },
+    titleI18n?: Record<string, string>,
   ) =>
   async (dispatch: Dispatch, getState: () => Partial<QueryFormData>) => {
     const formData = getState().explore?.form_data;
@@ -280,6 +290,7 @@ export const createSlice =
           dashboards,
           [],
           {} as QueryFormData,
+          titleI18n,
         ),
       });
 

@@ -21,7 +21,7 @@ import builtins
 import dataclasses
 import logging
 from collections import defaultdict
-from collections.abc import Hashable
+from collections.abc import Hashable, Mapping
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Any, Callable, cast, Optional, Union
@@ -110,6 +110,11 @@ from superset.superset_typing import (
     ResultSetColumnType,
 )
 from superset.utils import core as utils, json
+from superset.utils.i18n import (
+    get_locale_code,
+    normalize_i18n_dict,
+    resolve_i18n_label,
+)
 from superset.utils.backports import StrEnum
 
 config = current_app.config  # Backward compatibility for tests
@@ -124,6 +129,24 @@ ADDITIVE_METRIC_TYPES = {
     "doubleSum",
 }
 ADDITIVE_METRIC_TYPES_LOWER = {op.lower() for op in ADDITIVE_METRIC_TYPES}
+
+
+def _get_i18n_from_extra(extra: Any) -> dict[str, str]:
+    if not extra:
+        return {}
+
+    try:
+        parsed_extra = json.loads(extra) if isinstance(extra, str) else extra
+    except Exception:  # pylint: disable=broad-except
+        return {}
+
+    if not isinstance(parsed_extra, Mapping):
+        return {}
+
+    try:
+        return normalize_i18n_dict(parsed_extra.get("verbose_name_i18n"))
+    except ValueError:
+        return {}
 
 
 @dataclass
@@ -349,14 +372,23 @@ class BaseDatasource(AuditMixinNullable, ImportExportMixin):  # pylint: disable=
     @property
     def verbose_map(self) -> dict[str, str]:
         verb_map = {"__timestamp": "Time"}
+        locale = get_locale_code()
 
-        for o in self.metrics:
-            if o.metric_name not in verb_map:
-                verb_map[o.metric_name] = o.verbose_name or o.metric_name
+        for metric in self.metrics:
+            if metric.metric_name not in verb_map:
+                verb_map[metric.metric_name] = resolve_i18n_label(
+                    metric.verbose_name_i18n,
+                    metric.verbose_name or metric.metric_name,
+                    locale,
+                )
 
-        for o in self.columns:
-            if o.column_name not in verb_map:
-                verb_map[o.column_name] = o.verbose_name or o.column_name
+        for column in self.columns:
+            if column.column_name not in verb_map:
+                verb_map[column.column_name] = resolve_i18n_label(
+                    column.verbose_name_i18n,
+                    column.verbose_name or column.column_name,
+                    locale,
+                )
 
         return verb_map
 
@@ -483,14 +515,24 @@ class BaseDatasource(AuditMixinNullable, ImportExportMixin):  # pylint: disable=
         data.update({"metrics": filtered_metrics})
         data.update({"columns": filtered_columns})
 
+        locale = get_locale_code()
+
         all_columns = {
-            column_["column_name"]: column_["verbose_name"] or column_["column_name"]
+            column_["column_name"]: resolve_i18n_label(
+                _get_i18n_from_extra(column_.get("extra")),
+                column_.get("verbose_name") or column_["column_name"],
+                locale,
+            )
             for column_ in filtered_columns
         }
         verbose_map = {"__timestamp": "Time"}
         verbose_map.update(
             {
-                metric["metric_name"]: metric["verbose_name"] or metric["metric_name"]
+                metric["metric_name"]: resolve_i18n_label(
+                    _get_i18n_from_extra(metric.get("extra")),
+                    metric.get("verbose_name") or metric["metric_name"],
+                    locale,
+                )
                 for metric in filtered_metrics
             }
         )
@@ -863,6 +905,21 @@ class TableColumn(AuditMixinNullable, ImportExportMixin, CertificationMixin, Mod
         return str(self.column_name)
 
     @property
+    def extra_dict(self) -> dict[str, Any]:
+        if not self.extra:
+            return {}
+        try:
+            value = json.loads(self.extra) if isinstance(self.extra, str) else self.extra
+            return value if isinstance(value, dict) else {}
+        except Exception:  # pylint: disable=broad-except
+            return {}
+
+    @property
+    def verbose_name_i18n(self) -> dict[str, str] | None:
+        translations = _get_i18n_from_extra(self.extra_dict or self.extra)
+        return translations or None
+
+    @property
     def is_boolean(self) -> bool:
         """
         Check if the column has a boolean datatype.
@@ -999,6 +1056,7 @@ class TableColumn(AuditMixinNullable, ImportExportMixin, CertificationMixin, Mod
             "type_generic",
             "verbose_name",
             "warning_markdown",
+            "extra",
         )
 
         return {s: getattr(self, s) for s in attrs if hasattr(self, s)}
@@ -1045,6 +1103,21 @@ class SqlMetric(AuditMixinNullable, ImportExportMixin, CertificationMixin, Model
     def __repr__(self) -> str:
         return str(self.metric_name)
 
+    @property
+    def extra_dict(self) -> dict[str, Any]:
+        if not self.extra:
+            return {}
+        try:
+            value = json.loads(self.extra) if isinstance(self.extra, str) else self.extra
+            return value if isinstance(value, dict) else {}
+        except Exception:  # pylint: disable=broad-except
+            return {}
+
+    @property
+    def verbose_name_i18n(self) -> dict[str, str] | None:
+        translations = _get_i18n_from_extra(self.extra_dict or self.extra)
+        return translations or None
+
     def get_sqla_col(
         self,
         label: str | None = None,
@@ -1087,6 +1160,7 @@ class SqlMetric(AuditMixinNullable, ImportExportMixin, CertificationMixin, Model
             "warning_markdown",
             "warning_text",
             "verbose_name",
+            "extra",
         )
 
         return {s: getattr(self, s) for s in attrs}

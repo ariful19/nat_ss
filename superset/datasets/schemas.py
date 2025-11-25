@@ -33,6 +33,7 @@ from superset import security_manager
 from superset.connectors.sqla.models import SqlaTable
 from superset.exceptions import SupersetMarshmallowValidationError
 from superset.utils import json
+from superset.utils.i18n import normalize_i18n_dict
 
 get_delete_ids_schema = {"type": "array", "items": {"type": "integer"}}
 get_export_ids_schema = {"type": "array", "items": {"type": "integer"}}
@@ -67,6 +68,32 @@ def validate_python_date_format(dt_format: str) -> bool:
     return True
 
 
+def validate_verbose_name_i18n(extra: Any) -> None:
+    """
+    Validate that verbose_name_i18n (if present) is a mapping of locale -> string.
+    """
+
+    if extra is None:
+        return
+
+    try:
+        parsed_extra = json.loads(extra) if isinstance(extra, str) else extra
+    except Exception as ex:  # pylint: disable=broad-except
+        raise ValidationError([_("Extra must be valid JSON")], field_name="extra") from ex
+
+    if parsed_extra is None:
+        return
+
+    if not isinstance(parsed_extra, dict):
+        raise ValidationError([_("Extra must be a JSON object")], field_name="extra")
+
+    if parsed_extra.get("verbose_name_i18n") is not None:
+        try:
+            normalize_i18n_dict(parsed_extra["verbose_name_i18n"])
+        except ValueError as ex:
+            raise ValidationError([str(ex)], field_name="extra") from ex
+
+
 class DatasetColumnsPutSchema(Schema):
     id = fields.Integer(required=False)
     column_name = fields.String(required=True, validate=Length(1, 255))
@@ -88,6 +115,11 @@ class DatasetColumnsPutSchema(Schema):
     )
     uuid = fields.UUID(allow_none=True)
 
+    @validates_schema
+    # pylint: disable=unused-argument
+    def validate_i18n(self, data: dict[str, Any], **kwargs: Any) -> None:
+        validate_verbose_name_i18n(data.get("extra"))
+
 
 class DatasetMetricCurrencyPutSchema(Schema):
     symbol = fields.String(validate=Length(1, 128))
@@ -106,6 +138,11 @@ class DatasetMetricsPutSchema(Schema):
     verbose_name = fields.String(allow_none=True, metadata={Length: (1, 1024)})
     warning_text = fields.String(allow_none=True)
     uuid = fields.UUID(allow_none=True)
+
+    @validates_schema
+    # pylint: disable=unused-argument
+    def validate_i18n(self, data: dict[str, Any], **kwargs: Any) -> None:
+        validate_verbose_name_i18n(data.get("extra"))
 
 
 class FolderSchema(Schema):
@@ -255,6 +292,11 @@ class ImportV1ColumnSchema(Schema):
     description = fields.String(allow_none=True)
     python_date_format = fields.String(allow_none=True)
 
+    @validates_schema
+    # pylint: disable=unused-argument
+    def validate_i18n(self, data: dict[str, Any], **kwargs: Any) -> None:
+        validate_verbose_name_i18n(data.get("extra"))
+
 
 class ImportMetricCurrencySchema(Schema):
     symbol = fields.String(validate=Length(1, 128))
@@ -285,6 +327,11 @@ class ImportV1MetricSchema(Schema):
     currency = fields.Nested(ImportMetricCurrencySchema, allow_none=True)
     extra = fields.Dict(allow_none=True)
     warning_text = fields.String(allow_none=True)
+
+    @validates_schema
+    # pylint: disable=unused-argument
+    def validate_i18n(self, data: dict[str, Any], **kwargs: Any) -> None:
+        validate_verbose_name_i18n(data.get("extra"))
 
 
 class ImportV1DatasetSchema(Schema):
