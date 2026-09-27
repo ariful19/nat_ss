@@ -16,10 +16,9 @@
 # under the License.
 from typing import Callable
 
-from flask import abort, current_app, request
+from flask import abort, current_app
 from flask_appbuilder import expose
 from flask_login import AnonymousUserMixin, login_user
-from flask_wtf.csrf import same_origin
 
 from superset import event_logger, is_feature_enabled
 from superset.daos.dashboard import EmbeddedDashboardDAO
@@ -55,16 +54,6 @@ class EmbeddedView(BaseSupersetView):
             abort(404)
 
         assert embedded is not None
-
-        # validate request referrer in allowed domains
-        is_referrer_allowed = not embedded.allowed_domains
-        for domain in embedded.allowed_domains:
-            if same_origin(request.referrer, domain):
-                is_referrer_allowed = True
-                break
-
-        if not is_referrer_allowed:
-            abort(403)
 
         # Log in as an anonymous user, just for this view.
         # This view needs to be visible to all users,
