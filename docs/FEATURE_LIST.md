@@ -68,3 +68,28 @@ NAT (National Analytical Tool) is built on a modern, extensible, and scalable ar
 - **Caching**: A configurable caching layer is used to improve performance and reduce database load.
 - **Feature Flags**: A feature flag system allows for the safe rollout of new features.
 - **REST API**: A public REST API for programmatic access to NAT (National Analytical Tool)'s functionality.
+
+## Standard BI feature vs NAT features
+
+| **BI Feature**                                    | **Standard BI Feature** | **Available in NAT (Apache Superset)** | **Comments**                                                                                    |
+| ------------------------------------------------- | ----------------------- | -------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| **Dashboard Creation**                            | Yes                     | Yes                                    | Fully supported with customizable, interactive dashboards (drag-and-drop, resizing, embedding). |
+| **No-Code Visualization Builder**                 | Yes                     | Yes                                    | Users can build visualizations via UI, no coding required.                                      |
+| **Rich Visualization Library**                    | Yes                     | Yes                                    | Supports 40+ chart types (line, bar, pie, heatmap, geospatial, etc.).                           |
+| **SQL-Based Querying & SQL Editor**               | Yes                     | Yes                                    | SQL Lab provides full querying capabilities, with multi-tab and schema browsing.                |
+| **Semantic Layer (Virtual Datasets)**             | Yes                     | Yes                                    | Allows creating reusable dimensions/metrics for easy querying.                                  |
+| **Data Connectivity**                             | Yes                     | Yes                                    | Supports SQLAlchemy for connecting to many SQL databases (Postgres, MySQL, etc.).               |
+| **Caching for Performance**                       | Yes                     | Yes                                    | Configurable caching layer to improve performance.                                              |
+| **Extensibility (Custom Visualizations)**         | Yes                     | Yes                                    | Supports custom visualizations, plugin architecture, and API extensions.                        |
+| **Role-Based Access Control (RBAC)**              | Yes                     | Yes                                    | Granular access control and authentication options (OAuth, LDAP, etc.).                         |
+| **Advanced Data Exploration**                     | Yes                     | Yes                                    | Ad-hoc reporting and exploratory analysis capabilities.                                         |
+| **Cross-Filtering & Drill-Down**                  | Yes                     | Yes                                    | Supports interactive dashboards, drill-downs, and cross-filters between components.             |
+| **Cloud-Native Deployment**                       | Yes                     | Yes                                    | Can be deployed in cloud environments, supports Kubernetes for scalability.                     |
+| **Mobile Optimization**                           | Yes                     | No                                     | Mobile apps or optimized UI not explicitly mentioned.                                           |
+| **Collaboration Features (Comments/Annotations)** | Yes                     | No                                     | No real-time collaboration or commenting; basic sharing functionality available.                |
+| **Advanced Analytics / ML Support**               | Yes                     | No                                     | Lacks built-in advanced analytics, predictive modeling, or ML capabilities.                     |
+| **Real-Time Streaming Data Support**              | Yes                     | No                                     | Real-time analytics not natively supported — depends on underlying engine.                      |
+| **ETL/Data Preparation**                          | Yes                     | No                                     | Superset is more focused on visualization; requires external ETL tools for data preparation.    |
+| **Advanced Scheduling/Alerting**                  | Yes                     | No                                     | Limited support for report scheduling/alerts.                                                   |
+| **API Access for Programmatic Interaction**       | Yes                     | Yes                                    | Full REST API for programmatic access and embedding.                                            |
+| **Advanced Visual Styling**                       | Yes                     | No                                     | Limited advanced design customization for polished report visuals.                              |

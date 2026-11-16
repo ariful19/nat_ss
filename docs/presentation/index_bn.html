@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="bn">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <title>NAT - ফিচার হাইলাইটস</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Hind+Siliguri:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- AOS Animation Library -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #111;
+            --text-color: #eee;
+            --highlight-color: #42affa;
+            --section-padding: 80px 20px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            /* Added Hind Siliguri for better Bengali rendering */
+            font-family: 'Hind Siliguri', 'Inter', sans-serif;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        h1, h2, h3 {
+            font-weight: 800;
+            margin-top: 0;
+            line-height: 1.2;
+        }
+
+        h1 { font-size: 5.25rem; margin-bottom: 0.5rem; }
+        h2 { font-size: 3.75rem; margin-bottom: 2rem; color: var(--highlight-color); }
+        h3 { font-size: 2.25rem; font-weight: 300; opacity: 0.8; margin-bottom: 1.5rem; }
+
+        p { font-size: 1.65rem; opacity: 0.9; }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        section {
+            min-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: var(--section-padding);
+            border-bottom: 1px solid #222;
+        }
+
+        section:last-child {
+            border-bottom: none;
+        }
+
+        .hero {
+            text-align: center;
+            min-height: 100vh;
+        }
+
+        .hero img {
+            margin-top: 2rem;
+            max-width: 90%;
+            box-shadow: 0 0 50px rgba(66, 175, 250, 0.2);
+        }
+
+        /* Flex Layouts */
+        .flex-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 4rem;
+        }
+
+        .col-image {
+            flex: 1.2;
+        }
+
+        .col-text {
+            flex: 1;
+        }
+
+        /* Images */
+        img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: transform 0.3s ease;
+        }
+
+        img:hover {
+            transform: scale(1.02);
+        }
+
+        /* Lists */
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            margin-bottom: 1.2rem;
+            font-size: 1.65rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        li::before {
+            content: "•";
+            color: var(--highlight-color);
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+            font-size: 2.25rem;
+            line-height: 1.65rem;
+        }
+
+        .highlight {
+            color: var(--highlight-color);
+            font-weight: 600;
+        }
+
+        /* Architecture Section specific */
+        .architecture-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            text-align: center;
+        }
+        
+        .architecture-list li {
+            background: #222;
+            padding: 15px 30px;
+            border-radius: 50px;
+            margin: 0;
+            border: 1px solid #333;
+        }
+        
+        .architecture-list li::before {
+            display: none;
+        }
+
+        /* Roadmap Cards */
+        .roadmap-card {
+            background: #1a1a1a;
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid #333;
+            flex: 1 1 250px;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .roadmap-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 30px rgba(66, 175, 250, 0.15);
+            border-color: var(--highlight-color);
+        }
+        .roadmap-card h3 {
+            color: var(--highlight-color);
+            margin-bottom: 1rem;
+            font-size: 2.1rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            h1 { font-size: 3.75rem; }
+            h2 { font-size: 3rem; }
+            
+            .flex-container {
+                flex-direction: column;
+                text-align: center;
+                gap: 2rem;
+            }
+
+            .flex-container.reverse {
+                flex-direction: column-reverse;
+            }
+
+            .col-text, .col-image {
+                width: 100%;
+            }
+
+            li {
+                text-align: left;
+                display: inline-block;
+            }
+            
+            /* Center align lists on mobile if text is centered */
+            .col-text {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Intro -->
+    <section class="hero">
+        <div class="container">
+            <div data-aos="fade-down" data-aos-duration="1000">
+                <h1>NAT</h1>
+                <h3>National Analytical Tool</h3>
+                <p>একটি মডার্ন, এন্টারপ্রাইজ-রেডি বিজনেস ইন্টেলিজেন্স ওয়েব অ্যাপ্লিকেশন।</p>
+            </div>
+            <div data-aos="zoom-in" data-aos-delay="200" data-aos-duration="1000">
+                <img src="images/01_home.png" alt="Home Screen">
+            </div>
+        </div>
+    </section>
+
+    <!-- Dashboards -->
+    <section>
+        <div class="container">
+            <h2 data-aos="fade-right">🔮 ইন্টার‌্যাক্টিভ ড্যাশ বোর্ড</h2>
+            <div class="flex-container">
+                <div class="col-image" data-aos="fade-right" data-aos-delay="200">
+                    <img src="images/02_dashboard.png" alt="Dashboard">
+                </div>
+                <div class="col-text feature-list" data-aos="fade-left" data-aos-delay="400">
+                    <ul>
+                        <li><span class="highlight">ইন্টিউটিভ ইন্টারফেস:</span> ড্র্যাগ-এন্ড-ড্রপ গ্রিড লেআউট।</li>
+                        <li><span class="highlight">সমৃদ্ধ ভ্যারাইটি:</span> ভিজ্যুয়ালাইজেশন এবং মার্কডাউনের বিশাল সমাহার।</li>
+                        <li><span class="highlight">নেটিভ ফিল্টারিং:</span> শক্তিশালী বিল্ট-ইন ফিল্টারিং।</li>
+                        <li><span class="highlight">অটো-রিফ্রেশ:</span> রিয়েল-টাইম ডাটা আপডেট।</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Explore -->
+    <section>
+        <div class="container">
+            <h2 data-aos="fade-left" style="text-align: right; width: 100%;">📊 এক্সপ্লোর এবং ভিজ্যুয়ালাইজ</h2>
+            <div class="flex-container reverse"> <!-- Added reverse class for mobile logic if needed, but flex-direction handles it -->
+                <div class="col-text feature-list" data-aos="fade-right" data-aos-delay="200">
+                    <ul>
+                        <li><span class="highlight">নো-কোড বিল্ডার:</span> কোড ছাড়াই তৈরি করুন দুর্দান্ত ভিজ্যুয়ালাইজেশন।</li>
+                        <li><span class="highlight">সিমান্টিক লেয়ার:</span> ভার্চুয়াল মেট্রিক্স এবং কলাম ডিফাইন করুন।</li>
+                        <li><span class="highlight">ফ্লেক্সিবল কনফিগারেশন:</span> মেট্রিক্স এবং ডাইমেনশন নির্বাচন করা সহজ।</li>
+                    </ul>
+                </div>
+                <div class="col-image" data-aos="fade-left" data-aos-delay="400">
+                    <img src="images/03_explore.png" alt="Explore View">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Chart Types -->
+    <section>
+        <div class="container">
+            <h2 data-aos="fade-right">📈 বিশাল চার্ট গ্যালারি</h2>
+            <div class="flex-container">
+                <div class="col-image" data-aos="zoom-in-right">
+                    <img src="images/09_chart_types.png" alt="Chart Types Gallery">
+                </div>
+                <div class="col-text feature-list" data-aos="fade-left">
+                    <ul>
+                        <li><span class="highlight">৪০+ চার্ট টাইপ:</span> সাধারণ পাই চার্ট থেকে জিওস্পেশিয়াল ডেক পর্যন্ত।</li>
+                        <li><span class="highlight">টাইম-সিরিজ:</span> লাইন, বার, স্ক্যাটার, এরিয়া, স্টেপ।</li>
+                        <li><span class="highlight">ক্যাটাগরিকাল:</span> পাই, সানবার্স্ট, ট্রি-ম্যাপ, স্যাঙ্কি।</li>
+                        <li><span class="highlight">জিওস্পেশিয়াল:</span> ডেকGL, ম্যাপবক্স, ওয়ার্ল্ড ম্যাপ।</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SQL Lab -->
+    <section>
+        <div class="container">
+            <h2 data-aos="fade-right">✍️ SQL ল্যাব</h2>
+            <div class="flex-container">
+                <div class="col-image" data-aos="fade-up">
+                    <img src="images/04_sqllab.png" alt="SQL Lab">
+                </div>
+                <div class="col-text feature-list" data-aos="fade-left">
+                    <ul>
+                        <li><span class="highlight">শক্তিশালী এডিটর:</span> মাল্টি-ট্যাব SQL IDE।</li>
+                        <li><span class="highlight">স্কিমা ব্রাউজার:</span> তাৎক্ষণিকভাবে DB টেবিল এক্সপ্লোর করুন।</li>
+                        <li><span class="highlight">রেজাল্ট ভিজ্যুয়ালাইজ করুন:</span> এক ক্লিকেই চার্ট বিল্ডার।</li>
+                        <li><span class="highlight">ভার্চুয়াল ডাটাবেস:</span> কুয়েরি সেভ করুন ডাটা সোর্স হিসেবে।</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Data Connectivity -->
+    <section>
+        <div class="container">
+            <h2 data-aos="fade-left" style="text-align: right; width: 100%;">🔗 ডাটা কানেক্টিভিটি</h2>
+            <div class="flex-container reverse">
+                <div class="col-text feature-list" data-aos="fade-right">
+                    <ul>
+                        <li><span class="highlight">ব্রড সাপোর্ট:</span> যেকোনো SQL-স্পিকিং DB-তে কানেক্ট করে।</li>
+                        <li><span class="highlight">SQLAlchemy:</span> পাইথনের শক্তিশালী DB টুলকিট ব্যবহার করে।</li>
+                        <li><span class="highlight">সহজ ম্যানেজমেন্ট:</span> কানেকশনের জন্য সিম্পল UI।</li>
+                        <li><span class="highlight">কাস্টম ড্রাইভার:</span> যেকোনো ডাটাবেসের জন্য এক্সটেনসিবল।</li>
+                    </ul>
+                </div>
+                <div class="col-image" data-aos="zoom-in-left">
+                    <img src="images/05_databases.png" alt="Databases">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Datasets / Semantic Layer -->
+    <section>
+        <div class="container">
+            <h2 data-aos="fade-right">📦 ডাটা সেট এবং সিমান্টিক লেয়ার</h2>
+            <div class="flex-container">
+                <div class="col-image" data-aos="flip-left">
+                    <img src="images/08_datasets.png" alt="Datasets List">
+                </div>
+                <div class="col-text feature-list" data-aos="fade-left">
+                    <ul>
+                        <li><span class="highlight">ভার্চুয়াল মেট্রিক্স:</span> বিজনেস লজিক সেন্ট্রালি ডিফাইন করুন।</li>
+                        <li><span class="highlight">সার্টিফাইড মেট্রিক্স:</span> স্পেসিফিক মেট্রিক্সকে ট্রাস্টেড হিসেবে মার্ক করুন।</li>
+                        <li><span class="highlight">রিইউজেবল:</span> একবার তৈরি করুন, অনেক চার্টে ব্যবহার করুন।</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Security: RBAC -->
+    <section>
+        <div class="container">
+            <h2 data-aos="fade-left" style="text-align: right; width: 100%;">🔐 রোল-বেসড এক্সেস কন্ট্রোল (RBAC)</h2>
+            <div class="flex-container reverse">
+                <div class="col-text feature-list" data-aos="fade-right">
+                    <ul>
+                        <li><span class="highlight">গ্র্যানুলার পারমিশন:</span> ফিচারের উপর ফাইন-টিউনড কন্ট্রোল।</li>
+                        <li><span class="highlight">স্ট্যান্ডার্ড রোল:</span> Admin, Alpha, Gamma, ইত্যাদি।</li>
+                        <li><span class="highlight">কাস্টম রোল:</span> অর্গানাইজেশন স্ট্রাকচার অনুযায়ী রোল ডিফাইন করুন।</li>
+                    </ul>
+                </div>
+                <div class="col-image" data-aos="fade-up-left">
+                    <img src="images/06_roles.png" alt="Role List">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Security: RLS -->
+    <section>
+        <div class="container">
+            <h2 data-aos="fade-right">🛡️ রো-লেভেল সিকিউরিটি (RLS)</h2>
+            <div class="flex-container">
+                <div class="col-image" data-aos="fade-right">
+                    <img src="images/07_rls.png" alt="Row Level Security">
+                </div>
+                <div class="col-text feature-list" data-aos="fade-left">
+                    <ul>
+                        <li><span class="highlight">ডাটা ফিল্টারিং:</span> ইউজার/রোলের উপর ভিত্তি করে ডাটা ফিল্টার করুন।</li>
+                        <li><span class="highlight">SQL প্রেডিকেট:</span> শক্তিশালী ফিল্টার লজিক ডিফাইন করুন।</li>
+                        <li><span class="highlight">সিকিউর:</span> কুয়েরি লেভেলে এনফোর্সড।</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Predictive Analytics (New Feature) -->
+    <section>
+        <div class="container">
+            <h2 data-aos="fade-left" style="text-align: right; width: 100%;">🔮 প্রেডিক্টিভ এনালিটিক্স</h2>
+            <div class="flex-container reverse">
+                <div class="col-text feature-list" data-aos="fade-right">
+                    <ul>
+                        <li><span class="highlight">ফোরকাস্টিং:</span> হিস্টরিকাল ডাটার উপর ভিত্তি করে ফিউচার মেট্রিক্স প্রেডিক্ট করুন।</li>
+                        <li><span class="highlight">ট্রেন্ড এনালিসিস:</span> লং-টার্ম প্যাটার্ন এবং সিজনালিটি আইডেন্টিফাই করুন।</li>
+                        <li><span class="highlight">ডাটা-ড্রিভেন:</span> কনফিডেন্স ইন্টারভালের সাথে ইনফর্মড ডিসিশন নিন।</li>
+                    </ul>
+                </div>
+                <div class="col-image" data-aos="fade-left">
+                    <img src="images/10_predictive.png" alt="Predictive Analytics Visualization">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Future Roadmap -->
+    <section>
+        <div class="container">
+            <h2 data-aos="fade-down">🚀 ফিউচার রোডম্যাপ: AI এবং অটোমেশন</h2>
+            <div class="flex-container" style="align-items: stretch; gap: 2rem; flex-wrap: wrap; justify-content: center;">
+                <!-- Card 1 -->
+                <div class="roadmap-card" data-aos="flip-left" data-aos-delay="100">
+                    <h3>🤖 AI ইন্টিগ্রেশন</h3>
+                    <p>প্লেইন ইংলিশে ডাটা কুয়েরি করার জন্য Natural Language Querying (NLQ) এবং ইনস্ট্যান্ট উত্তর পান।</p>
+                </div>
+                <!-- Card 2 -->
+                <div class="roadmap-card" data-aos="flip-left" data-aos-delay="300">
+                    <h3>💡 অটো ইনসাইটস</h3>
+                    <p>ডাটা সেটের মধ্যে অটোমেটিক অ্যানোমালি, ট্রেন্ড এবং কি-ড্রাইভার ডিটেকশন।</p>
+                </div>
+                <!-- Card 3 -->
+                <div class="roadmap-card" data-aos="flip-left" data-aos-delay="500">
+                    <h3>📊 স্মার্ট সাজেশন</h3>
+                    <p>সিলেক্টেড ডাটা ফিল্ডের উপর ভিত্তি করে বেস্ট ভিজ্যুয়ালাইজেশন টাইপের জন্য ইন্টেলিজেন্ট রিকমেন্ডেশন।</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section>
+        <div class="container">
+            <h2 data-aos="fade-down">❓ সচরাচর জিজ্ঞাসিত প্রশ্ন (FAQ)</h2>
+            <div class="faq-grid" style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start;">
+                
+                <!-- Col 1 -->
+                <div data-aos="fade-right" style="flex: 1; min-width: 300px;">
+                    <details>
+                        <summary>NAT কি?</summary>
+                        <p>NAT (National Analytical Tool) হলো একটি মডার্ন, এন্টারপ্রাইজ-রেডি বিজনেস ইন্টেলিজেন্স ওয়েব অ্যাপ্লিকেশন যা ওপেন-সোর্স Apache Superset প্রজেক্টের উপর ভিত্তি করে তৈরি।</p>
+                    </details>
+                    <details>
+                        <summary>আন্ডারলাইং টেকনোলজি কি?</summary>
+                        <p>এটি একটি শক্তিশালী স্ট্যাকের উপর তৈরি যার মধ্যে রয়েছে ব্যাকএন্ডের জন্য Python (Flask), ফ্রন্টএন্ডের জন্য React, এবং ডাটাবেস কানেক্টিভিটির জন্য SQLAlchemy।</p>
+                    </details>
+                    <details>
+                        <summary>কোন কোন ডাটাবেসে কানেক্ট করা যাবে?</summary>
+                        <p>NAT প্রায় সব SQL-স্পিকিং ডাটাবেস সাপোর্ট করে, যার মধ্যে রয়েছে PostgreSQL, MySQL, Oracle, MS SQL, Redshift, Snowflake, ClickHouse, Trino এবং আরও অনেক।</p>
+                    </details>
+                    <details>
+                        <summary>আমি কি CSV বা Excel ফাইল আপলোড করতে পারি?</summary>
+                        <p>হ্যাঁ, ইউজাররা সহজেই CSV, Excel এবং Columnar ফাইল আপলোড করে ডাটা সেট তৈরি করতে পারে এবং তাৎক্ষণিকভাবে ভিজ্যুয়ালাইজ করতে পারে।</p>
+                    </details>
+                    <details>
+                        <summary>আমার ডাটা কি সিকিউর?</summary>
+                        <p>অবশ্যই। আমরা Role-Based Access Control (RBAC), Row-Level Security (RLS) এবং এনক্রিপ্টেড ডাটাবেস কানেকশনের মাধ্যমে এন্টারপ্রাইজ-গ্রেড সিকিউরিটি ব্যবহার করি।</p>
+                    </details>
+                    <details>
+                        <summary>"সিমান্টিক লেয়ার" কি?</summary>
+                        <p>এটি আপনাকে সেন্ট্রালি ভার্চুয়াল মেট্রিক্স (যেমন, "Revenue = Price * Qty") এবং ক্যালকুলেটেড কলাম ডিফাইন করতে দেয়, যা পরে সব চার্টে পুনরায় ব্যবহার করা যায়।</p>
+                    </details>
+                    <details>
+                        <summary>আমি কি কাস্টম SQL লিখতে পারি?</summary>
+                        <p>হ্যাঁ! "SQL Lab" একটি শক্তিশালী, মাল্টি-ট্যাব SQL IDE প্রদান করে যা অ্যাডভান্সড ইউজারদের সরাসরি ডাটা কুয়েরি করতে এবং রেজাল্ট ভিজ্যুয়ালাইজ করতে দেয়।</p>
+                    </details>
+                    <details>
+                        <summary>আমি কিভাবে ড্যাশ বোর্ড শেয়ার করব?</summary>
+                        <p>আপনি ডিরেক্ট লিংক শেয়ার করতে পারেন, ইমেইলে PDF/ইমেজ রিপোর্ট পাঠাতে পারেন, অথবা অন্য অ্যাপ্লিকেশনে ড্যাশ বোর্ড সিকিউরলি এমবেড করতে পারেন।</p>
+                    </details>
+                    <details>
+                        <summary>এটি কি রিয়েল-টাইম ডাটা সাপোর্ট করে?</summary>
+                        <p>হ্যাঁ, ড্যাশ বোর্ড নির্দিষ্ট ইন্টারভালে অটো-রিফ্রেশ কনফিগার করা যায়, এবং আর্কিটেকচারটি বিশাল ডাটা সেট হ্যান্ডেল করার জন্য অ্যাসিনক্রোনাস কুয়েরি সাপোর্ট করে।</p>
+                    </details>
+                    <details>
+                        <summary>কি কি ভিজ্যুয়ালাইজেশন টাইপ এভেলেবল?</summary>
+                        <p>আমাদের ৪০+ বিল্ট-ইন ভিজ্যুয়ালাইজেশন টাইপ আছে, সাধারণ বার এবং লাইন চার্ট থেকে শুরু করে অ্যাডভান্সড জিওস্পেশিয়াল ম্যাপ (DeckGL), স্যাঙ্কি ডায়াগ্রাম এবং হিটম্যাপ পর্যন্ত।</p>
+                    </details>
+                </div>
+
+                <!-- Col 2 -->
+                <div data-aos="fade-left" style="flex: 1; min-width: 300px;">
+                    <details>
+                        <summary>আমি কি কাস্টম ভিজ্যুয়ালাইজেশন তৈরি করতে পারি?</summary>
+                        <p>হ্যাঁ, আর্কিটেকচারটি এক্সটেনসিবল। ডেভেলপাররা প্লাগিন সিস্টেম ব্যবহার করে কাস্টম ভিজ্যুয়ালাইজেশন প্লাগিন তৈরি করতে পারে।</p>
+                    </details>
+                    <details>
+                        <summary>এক্সেস কিভাবে কন্ট্রোল করা হয়?</summary>
+                        <p>আমরা স্ট্যান্ডার্ড রোল (Admin, Alpha, Gamma) এবং গ্র্যানুলার কাস্টম রোল ডিফাইন করার সুবিধাসহ একটি কমপ্রিহেনসিভ RBAC সিস্টেম ব্যবহার করি।</p>
+                    </details>
+                    <details>
+                        <summary>আমি কি স্পেসিফিক ইউজারের জন্য ডাটা ভিজিবিলিটি লিমিট করতে পারি?</summary>
+                        <p>হ্যাঁ, Row-Level Security (RLS) আপনাকে ফিল্টার ডিফাইন করতে দেয় যা ইউজারের রোল বা ID-র উপর ভিত্তি করে ডাটা রো রেস্ট্রিক্ট করে।</p>
+                    </details>
+                    <details>
+                        <summary>কোন API এভেলেবল আছে?</summary>
+                        <p>হ্যাঁ, চার্ট, ড্যাশ বোর্ড, ডাটা সেট এবং ইউজার ম্যানেজমেন্টের প্রোগ্রাম্যাটিক এক্সেসের জন্য একটি পাবলিক REST API এভেলেবল।</p>
+                    </details>
+                    <details>
+                        <summary>আমি কি রিপোর্ট শিডিউল করতে পারি?</summary>
+                        <p>হ্যাঁ, আপনি ড্যাশ বোর্ড বা চার্টের স্ন্যাপশটসহ অটোমেটেড ইমেইল বা স্ল্যাক রিপোর্ট শিডিউল করতে পারেন।</p>
+                    </details>
+                    <details>
+                        <summary>ক্যাশিং কিভাবে কাজ করে?</summary>
+                        <p>আমরা কুয়েরি রেজাল্ট স্টোর করার জন্য একটি ক্যাশিং লেয়ার (Redis, Memcached, ইত্যাদি সাপোর্টেড) ব্যবহার করি, যা পপুলার ড্যাশ বোর্ডের জন্য সাব-সেকেন্ড লোড টাইম নিশ্চিত করে।</p>
+                    </details>
+                    <details>
+                        <summary>আমি কি অন্য অ্যাপে চার্ট এমবেড করতে পারি?</summary>
+                        <p>হ্যাঁ, এমবেডেড SDK আপনাকে কাস্টম অথেন্টিকেশনের মাধ্যমে আপনার নিজস্ব কাস্টমার-ফেসিং অ্যাপ্লিকেশনে ড্যাশ বোর্ড এমবেড করতে দেয়।</p>
+                    </details>
+                    <details>
+                        <summary>"এক্সপ্লোর" ভিউ কি?</summary>
+                        <p>এক্সপ্লোর হলো একটি নো-কোড ইন্টারফেস যেখানে আপনি মেট্রিক্স এবং ডাইমেনশন সিলেক্ট করে, ফিল্টার অ্যাপ্লাই করে এবং স্টাইল কাস্টমাইজ করে চার্ট তৈরি করতে পারেন।</p>
+                    </details>
+                    <details>
+                        <summary>এটি কি জিওস্পেশিয়াল এনালিসিস সাপোর্ট করে?</summary>
+                        <p>হ্যাঁ, DeckGL এবং Mapbox ইন্টিগ্রেশন স্ক্যাটারপ্লট, গ্রিড লেয়ার এবং পলিগন ম্যাপের মতো শক্তিশালী জিওস্পেশিয়াল ভিজ্যুয়ালাইজেশন সাপোর্ট করে।</p>
+                    </details>
+                    <details>
+                        <summary>এটি কি ক্লাউড-নেটিভ?</summary>
+                        <p>হ্যাঁ, অ্যাপ্লিকেশনটি ক্লাউড-নেটিভ এবং স্কেলেবল ডিজাইন করা হয়েছে, যা Docker এবং Kubernetes এনভায়রনমেন্টে সিমলেসলি রান করে।</p>
+                    </details>
+                </div>
+            </div>
+            
+            <style>
+                details {
+                    background: #1a1a1a;
+                    margin-bottom: 15px;
+                    border-radius: 8px;
+                    border: 1px solid #333;
+                    overflow: hidden;
+                    transition: all 0.3s ease;
+                }
+                details:hover {
+                    border-color: var(--highlight-color);
+                }
+                summary {
+                    font-size: 1.5rem;
+                    padding: 15px 20px;
+                    cursor: pointer;
+                    font-weight: 600;
+                    position: relative;
+                    list-style: none; /* Hide default triangle */
+                }
+                summary::-webkit-details-marker {
+                    display: none;
+                }
+                summary::after {
+                    content: '+';
+                    position: absolute;
+                    right: 20px;
+                    color: var(--highlight-color);
+                    font-weight: bold;
+                    font-size: 1.8rem;
+                }
+                details[open] summary::after {
+                    content: '-';
+                }
+                details p {
+                    padding: 0 20px 20px 20px;
+                    margin: 0;
+                    color: #bbb;
+                    font-size: 1.45rem;
+                    border-top: 1px solid #333;
+                    padding-top: 15px;
+                }
+            </style>
+        </div>
+    </section>
+
+    <!-- Architecture -->
+    <section style="text-align: center; min-height: 60vh;">
+        <div class="container">
+            <h2 data-aos="fade-down">🏗️ মডার্ন আর্কিটেকচার</h2>
+            <ul class="architecture-list" data-aos="zoom-in-up">
+                <li>ক্লাউড-নেটিভ এবং স্কেলেবল</li>
+                <li>অ্যাসিনক্রোনাস কুয়েরি এক্সিকিউশন</li>
+                <li>পারফরম্যান্সের জন্য ক্যাশিং লেয়ার</li>
+                <li>এক্সটেনসিবল প্লাগিন সিস্টেম</li>
+                <li>পাবলিক REST API</li>
+            </ul>
+        </div>
+    </section>
+
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        AOS.init({
+            once: false, // whether animation should happen only once - while scrolling down
+            mirror: true, // whether elements should animate out while scrolling past them
+            offset: 100,
+            duration: 800,
+            easing: 'ease-out-cubic',
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <title>NAT - Feature Highlights</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <!-- AOS Animation Library -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #111;
+            --text-color: #eee;
+            --highlight-color: #42affa;
+            --section-padding: 80px 20px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        h1, h2, h3 {
+            font-weight: 800;
+            margin-top: 0;
+            line-height: 1.2;
+        }
+
+        h1 { font-size: 3.5rem; margin-bottom: 0.5rem; }
+        h2 { font-size: 2.5rem; margin-bottom: 2rem; color: var(--highlight-color); }
+        h3 { font-size: 1.5rem; font-weight: 300; opacity: 0.8; margin-bottom: 1.5rem; }
+
+        p { font-size: 1.1rem; opacity: 0.9; }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        section {
+            min-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: var(--section-padding);
+            border-bottom: 1px solid #222;
+        }
+
+        section:last-child {
+            border-bottom: none;
+        }
+
+        .hero {
+            text-align: center;
+            min-height: 100vh;
+        }
+
+        .hero img {
+            margin-top: 2rem;
+            max-width: 90%;
+            box-shadow: 0 0 50px rgba(66, 175, 250, 0.2);
+        }
+
+        /* Flex Layouts */
+        .flex-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 4rem;
+        }
+
+        .col-image {
+            flex: 1.2;
+        }
+
+        .col-text {
+            flex: 1;
+        }
+
+        /* Images */
+        img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: transform 0.3s ease;
+        }
+
+        img:hover {
+            transform: scale(1.02);
+        }
+
+        /* Lists */
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            margin-bottom: 1.2rem;
+            font-size: 1.1rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        li::before {
+            content: "•";
+            color: var(--highlight-color);
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+            font-size: 1.5rem;
+            line-height: 1.1rem;
+        }
+
+        .highlight {
+            color: var(--highlight-color);
+            font-weight: 600;
+        }
+
+        /* Architecture Section specific */
+        .architecture-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            text-align: center;
+        }
+        
+        .architecture-list li {
+            background: #222;
+            padding: 15px 30px;
+            border-radius: 50px;
+            margin: 0;
+            border: 1px solid #333;
+        }
+        
+        .architecture-list li::before {
+            display: none;
+        }
+
+        /* Roadmap Cards */
+        .roadmap-card {
+            background: #1a1a1a;
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid #333;
+            flex: 1 1 250px;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .roadmap-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 30px rgba(66, 175, 250, 0.15);
+            border-color: var(--highlight-color);
+        }
+        .roadmap-card h3 {
+            color: var(--highlight-color);
+            margin-bottom: 1rem;
+            font-size: 1.4rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            h1 { font-size: 2.5rem; }
+            h2 { font-size: 2rem; }
+            
+            .flex-container {
+                flex-direction: column;
+                text-align: center;
+                gap: 2rem;
+            }
+
+            .flex-container.reverse {
+                flex-direction: column-reverse;
+            }
+
+            .col-text, .col-image {
+                width: 100%;
+            }
+
+            li {
+                text-align: left;
+                display: inline-block;
+            }
+            
+            /* Center align lists on mobile if text is centered */
+            .col-text {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Intro -->
+    <section class="hero">
+        <div class="container">
+            <div data-aos="fade-down" data-aos-duration="1000">
+                <h1>NAT</h1>
+                <h3>National Analytical Tool</h3>
+                <p>A modern, enterprise-ready business intelligence web application.</p>
+            </div>
+            <div data-aos="zoom-in" data-aos-delay="200" data-aos-duration="1000">
+                <img src="images/01_home.png" alt="Home Screen">
+            </div>
+        </div>
+    </section>
+
+    <!-- Dashboards -->
+    <section>
+        <div class="container">
+            <h2 data-aos="fade-right">🔮 Interactive Dashboards</h2>
+            <div class="flex-container">
+                <div class="col-image" data-aos="fade-right" data-aos-delay="200">
+                    <img src="images/02_dashboard.png" alt="Dashboard">
+                </div>
+                <div class="col-text feature-list" data-aos="fade-left" data-aos-delay="400">
+                    <ul>
+                        <li><span class="highlight">Intuitive Interface:</span> Drag-and-drop grid layout.</li>
+                        <li><span class="highlight">Rich Variety:</span> Wide array of visualizations & markdown.</li>
+                        <li><span class="highlight">Native Filtering:</span> Powerful built-in filtering.</li>
+                        <li><span class="highlight">Customizable UI:</span> Match your organization's branding.</li>
+                        <li><span class="highlight">Auto-Refresh:</span> Real-time data updates.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Explore -->
+    <section>
+        <div class="container">
+            <h2 data-aos="fade-left" style="text-align: right; width: 100%;">📊 Explore & Visualize</h2>
+            <div class="flex-container reverse"> <!-- Added reverse class for mobile logic if needed, but flex-direction handles it -->
+                <div class="col-text feature-list" data-aos="fade-right" data-aos-delay="200">
+                    <ul>
+                        <li><span class="highlight">No-Code Builder:</span> Create stunning viz without code.</li>
+                        <li><span class="highlight">Semantic Layer:</span> Define virtual metrics and columns.</li>
+                        <li><span class="highlight">Flexible Config:</span> Easy selection of metrics & dimensions.</li>
+                    </ul>
+                </div>
+                <div class="col-image" data-aos="fade-left" data-aos-delay="400">
+                    <img src="images/03_explore.png" alt="Explore View">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Chart Types -->
+    <section>
+        <div class="container">
+            <h2 data-aos="fade-right">📈 Extensive Chart Gallery</h2>
+            <div class="flex-container">
+                <div class="col-image" data-aos="zoom-in-right">
+                    <img src="images/09_chart_types.png" alt="Chart Types Gallery">
+                </div>
+                <div class="col-text feature-list" data-aos="fade-left">
+                    <ul>
+                        <li><span class="highlight">40+ Chart Types:</span> From simple pies to geospatial decks.</li>
+                        <li><span class="highlight">Time-series:</span> Line, Bar, Scatter, Area, Step.</li>
+                        <li><span class="highlight">Categorical:</span> Pie, Sunburst, Treemap, Sankey.</li>
+                        <li><span class="highlight">Geospatial:</span> DeckGL, MapBox, World Map.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SQL Lab -->
+    <section>
+        <div class="container">
+            <h2 data-aos="fade-right">✍️ SQL Lab</h2>
+            <div class="flex-container">
+                <div class="col-image" data-aos="fade-up">
+                    <img src="images/04_sqllab.png" alt="SQL Lab">
+                </div>
+                <div class="col-text feature-list" data-aos="fade-left">
+                    <ul>
+                        <li><span class="highlight">Powerful Editor:</span> Multi-tab SQL IDE.</li>
+                        <li><span class="highlight">Schema Browser:</span> Explore DB tables instantly.</li>
+                        <li><span class="highlight">Visualize Results:</span> One-click to Chart Builder.</li>
+                        <li><span class="highlight">Virtual Datasets:</span> Save queries as datasources.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Data Connectivity -->
+    <section>
+        <div class="container">
+            <h2 data-aos="fade-left" style="text-align: right; width: 100%;">🔗 Data Connectivity</h2>
+            <div class="flex-container reverse">
+                <div class="col-text feature-list" data-aos="fade-right">
+                    <ul>
+                        <li><span class="highlight">Broad Support:</span> Connects to any SQL-speaking DB.</li>
+                        <li><span class="highlight">SQLAlchemy:</span> Leverages Python's powerful DB toolkit.</li>
+                        <li><span class="highlight">Easy Management:</span> Simple UI for connections.</li>
+                        <li><span class="highlight">Custom Drivers:</span> Extensible for any database.</li>
+                    </ul>
+                </div>
+                <div class="col-image" data-aos="zoom-in-left">
+                    <img src="images/05_databases.png" alt="Databases">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Datasets / Semantic Layer -->
+    <section>
+        <div class="container">
+            <h2 data-aos="fade-right">📦 Datasets & Semantic Layer</h2>
+            <div class="flex-container">
+                <div class="col-image" data-aos="flip-left">
+                    <img src="images/08_datasets.png" alt="Datasets List">
+                </div>
+                <div class="col-text feature-list" data-aos="fade-left">
+                    <ul>
+                        <li><span class="highlight">Virtual Metrics:</span> Define business logic centrally.</li>
+                        <li><span class="highlight">Certified Metrics:</span> Mark specific metrics as trusted.</li>
+                        <li><span class="highlight">Reusable:</span> Build once, use in many charts.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Security: RBAC -->
+    <section>
+        <div class="container">
+            <h2 data-aos="fade-left" style="text-align: right; width: 100%;">🔐 Role-Based Access Control (RBAC)</h2>
+            <div class="flex-container reverse">
+                <div class="col-text feature-list" data-aos="fade-right">
+                    <ul>
+                        <li><span class="highlight">Granular Permissions:</span> Fine-tuned control over features.</li>
+                        <li><span class="highlight">Standard Roles:</span> Admin, Alpha, Gamma, etc.</li>
+                        <li><span class="highlight">Custom Roles:</span> Define roles matching your org structure.</li>
+                    </ul>
+                </div>
+                <div class="col-image" data-aos="fade-up-left">
+                    <img src="images/06_roles.png" alt="Role List">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Security: RLS -->
+    <section>
+        <div class="container">
+            <h2 data-aos="fade-right">🛡️ Row-Level Security (RLS)</h2>
+            <div class="flex-container">
+                <div class="col-image" data-aos="fade-right">
+                    <img src="images/07_rls.png" alt="Row Level Security">
+                </div>
+                <div class="col-text feature-list" data-aos="fade-left">
+                    <ul>
+                        <li><span class="highlight">Data Filtering:</span> Filter data based on user/role.</li>
+                        <li><span class="highlight">SQL Predicates:</span> Define powerful filter logic.</li>
+                        <li><span class="highlight">Secure:</span> Enforced at the query level.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Predictive Analytics (New Feature) -->
+    <section>
+        <div class="container">
+            <h2 data-aos="fade-left" style="text-align: right; width: 100%;">🔮 Predictive Analytics</h2>
+            <div class="flex-container reverse">
+                <div class="col-text feature-list" data-aos="fade-right">
+                    <ul>
+                        <li><span class="highlight">Forecasting:</span> Predict future metrics based on historical data.</li>
+                        <li><span class="highlight">Trend Analysis:</span> Identify long-term patterns and seasonality.</li>
+                        <li><span class="highlight">Data-Driven:</span> Make informed decisions with confidence intervals.</li>
+                    </ul>
+                </div>
+                <div class="col-image" data-aos="fade-left">
+                    <img src="images/10_predictive.png" alt="Predictive Analytics Visualization">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Future Roadmap -->
+    <section>
+        <div class="container">
+            <h2 data-aos="fade-down">🚀 Future Roadmap: AI & Automation</h2>
+            <div class="flex-container" style="align-items: stretch; gap: 2rem; flex-wrap: wrap; justify-content: center;">
+                <!-- Card 1 -->
+                <div class="roadmap-card" data-aos="flip-left" data-aos-delay="100">
+                    <h3>🤖 AI Integration</h3>
+                    <p>Natural Language Querying (NLQ) to ask data questions in plain English and get instant answers.</p>
+                </div>
+                <!-- Card 2 -->
+                <div class="roadmap-card" data-aos="flip-left" data-aos-delay="300">
+                    <h3>💡 Auto Insights</h3>
+                    <p>Automatic detection of anomalies, trends, and key drivers within your datasets.</p>
+                </div>
+                <!-- Card 3 -->
+                <div class="roadmap-card" data-aos="flip-left" data-aos-delay="500">
+                    <h3>📊 Smart Suggestions</h3>
+                    <p>Intelligent recommendations for the best visualization types based on selected data fields.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section>
+        <div class="container">
+            <h2 data-aos="fade-down">❓ Frequently Asked Questions</h2>
+            <div class="faq-grid" style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start;">
+                
+                <!-- Col 1 -->
+                <div data-aos="fade-right" style="flex: 1; min-width: 300px;">
+                    <details>
+                        <summary>What is NAT?</summary>
+                        <p>NAT (National Analytical Tool) is a modern, enterprise-ready business intelligence web application based on the open-source Apache Superset project.</p>
+                    </details>
+                    <details>
+                        <summary>What is the underlying technology?</summary>
+                        <p>It is built on a robust stack including Python (Flask) for the backend, React for the frontend, and SQLAlchemy for database connectivity.</p>
+                    </details>
+                    <details>
+                        <summary>What databases can I connect to?</summary>
+                        <p>NAT supports nearly all SQL-speaking databases, including PostgreSQL, MySQL, Oracle, MS SQL, Redshift, Snowflake, ClickHouse, Trino, and many more.</p>
+                    </details>
+                    <details>
+                        <summary>Can I upload CSV or Excel files?</summary>
+                        <p>Yes, users can easily upload CSV, Excel, and Columnar files to create datasets and visualize them instantly.</p>
+                    </details>
+                    <details>
+                        <summary>Is my data secure?</summary>
+                        <p>Absolutely. We use enterprise-grade security with Role-Based Access Control (RBAC), Row-Level Security (RLS), and support for major authentication backends (OpenID, LDAP, OAuth, etc).</p>
+                    </details>
+                    <details>
+                        <summary>What is the "Semantic Layer"?</summary>
+                        <p>It allows you to define virtual metrics (e.g., "Revenue = Price * Qty") and calculated columns centrally, so they can be reused across all charts.</p>
+                    </details>
+                    <details>
+                        <summary>Can I write custom SQL?</summary>
+                        <p>Yes! The "SQL Lab" provides a powerful, multi-tab SQL IDE for advanced users to query data directly and visualize the results.</p>
+                    </details>
+                    <details>
+                        <summary>How do I share dashboards?</summary>
+                        <p>You can share direct links, email PDF/image reports, or even embed dashboards securely into other applications.</p>
+                    </details>
+                    <details>
+                        <summary>Does it support real-time data?</summary>
+                        <p>Yes, dashboards can be configured to auto-refresh at specific intervals, and the architecture supports asynchronous queries for handling large datasets.</p>
+                    </details>
+                    <details>
+                        <summary>What visualization types are available?</summary>
+                        <p>We offer over 40 built-in visualization types, from standard bars and lines to advanced geospatial maps (DeckGL), Sankey diagrams, and heatmaps.</p>
+                    </details>
+                </div>
+
+                <!-- Col 2 -->
+                <div data-aos="fade-left" style="flex: 1; min-width: 300px;">
+                    <details>
+                        <summary>Can I create custom visualizations?</summary>
+                        <p>Yes, the architecture is extensible. Developers can create custom visualization plugins using the plugin system.</p>
+                    </details>
+                    <details>
+                        <summary>How is access controlled?</summary>
+                        <p>We use a comprehensive RBAC system with standard roles (Admin, Alpha, Gamma) and the ability to define granular custom roles.</p>
+                    </details>
+                    <details>
+                        <summary>Can I limit data visibility for specific users?</summary>
+                        <p>Yes, Row-Level Security (RLS) allows you to define filters that restrict which data rows a user can see based on their role or ID.</p>
+                    </details>
+                    <details>
+                        <summary>Is there an API?</summary>
+                        <p>Yes, a public REST API is available for programmatic access to charts, dashboards, datasets, and user management.</p>
+                    </details>
+                    <details>
+                        <summary>Can I schedule reports?</summary>
+                        <p>Yes, you can schedule automated email or Slack reports containing snapshots of your dashboards or charts.</p>
+                    </details>
+                    <details>
+                        <summary>How does caching work?</summary>
+                        <p>We use a caching layer (supporting Redis, Memcached, etc.) to store query results, ensuring sub-second load times for popular dashboards.</p>
+                    </details>
+                    <details>
+                        <summary>Can I embed charts in other apps?</summary>
+                        <p>Yes, the Embedded SDK allows you to embed dashboards into your own customer-facing applications with custom authentication.</p>
+                    </details>
+                    <details>
+                        <summary>What is the "Explore" view?</summary>
+                        <p>Explore is a no-code interface where you can build charts by selecting metrics and dimensions, applying filters, and customizing styles.</p>
+                    </details>
+                    <details>
+                        <summary>Does it support geospatial analysis?</summary>
+                        <p>Yes, integration with DeckGL and Mapbox allows for powerful geospatial visualizations like scatterplots, grid layers, and polygon maps.</p>
+                    </details>
+                    <details>
+                        <summary>Is it cloud-native?</summary>
+                        <p>Yes, the application is designed to be cloud-native and scalable, running seamlessly in Docker and Kubernetes environments.</p>
+                    </details>
+                </div>
+            </div>
+            
+            <style>
+                details {
+                    background: #1a1a1a;
+                    margin-bottom: 15px;
+                    border-radius: 8px;
+                    border: 1px solid #333;
+                    overflow: hidden;
+                    transition: all 0.3s ease;
+                }
+                details:hover {
+                    border-color: var(--highlight-color);
+                }
+                summary {
+                    padding: 15px 20px;
+                    cursor: pointer;
+                    font-weight: 600;
+                    position: relative;
+                    list-style: none; /* Hide default triangle */
+                }
+                summary::-webkit-details-marker {
+                    display: none;
+                }
+                summary::after {
+                    content: '+';
+                    position: absolute;
+                    right: 20px;
+                    color: var(--highlight-color);
+                    font-weight: bold;
+                    font-size: 1.2rem;
+                }
+                details[open] summary::after {
+                    content: '-';
+                }
+                details p {
+                    padding: 0 20px 20px 20px;
+                    margin: 0;
+                    color: #bbb;
+                    font-size: 0.95rem;
+                    border-top: 1px solid #333;
+                    padding-top: 15px;
+                }
+            </style>
+        </div>
+    </section>
+
+    <!-- Architecture -->
+    <section style="text-align: center; min-height: 60vh;">
+        <div class="container">
+            <h2 data-aos="fade-down">🏗️ Modern Architecture</h2>
+            <ul class="architecture-list" data-aos="zoom-in-up">
+                <li>Cloud-Native & Scalable</li>
+                <li>Asynchronous Query Execution</li>
+                <li>Caching Layer for Performance</li>
+                <li>Extensible Plugin System</li>
+                <li>Feature Flags for Safe Rollouts</li>
+                <li>Public REST API</li>
+            </ul>
+        </div>
+    </section>
+
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        AOS.init({
+            once: false, // whether animation should happen only once - while scrolling down
+            mirror: true, // whether elements should animate out while scrolling past them
+            offset: 100,
+            duration: 800,
+            easing: 'ease-out-cubic',
+        });
+    </script>
+</body>
+</html>
